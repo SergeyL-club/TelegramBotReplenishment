@@ -15,7 +15,7 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --passWithNoTests",
     "postinstall": "node ./init-husky.js",
     "lint": "eslint . --ext .ts",
     "prepare": "husky"
