@@ -1,3 +1,6 @@
+# TelegramBotReplenishment
+Telegram Bot Replenishment - телеграмм бот для обработки клиентов и продавцов, используется система p2p.
+
 ## Лицензирование (Dual-Licensing)
 
 Этот проект распространяется под моделью двойного лицензирования.
@@ -20,6 +23,3 @@
 
 gmail: damnazzel@gmail.com
 telegram: https://t.me/Sergeyl_code
-
-
-
