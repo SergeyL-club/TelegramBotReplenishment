@@ -1,0 +1,11 @@
+
+#!/usr/bin/env sh
+set -eu pipefail
+
+echo "Running pre-push checks..."
+echo "Running automatic tests..."
+npm run test
+echo "Automatic tests passed. Starting linting..."
+npm run lint
+echo "Linting passed. Pre-push checks completed successfully."
+echo "Proceeding with push."

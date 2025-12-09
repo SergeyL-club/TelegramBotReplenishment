@@ -1,0 +1,38 @@
+{
+  "name": "telegrambotreplenishment",
+  "version": "1.0.0",
+  "description": "Telegram Bot Replenishment",
+  "homepage": "https://github.com/SergeyL-club/TelegramBotReplenishment#readme",
+  "bugs": {
+    "url": "https://github.com/SergeyL-club/TelegramBotReplenishment/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SergeyL-club/TelegramBotReplenishment.git"
+  },
+  "license": "AGPL-3.0",
+  "author": "Sergey Lapshin (SergeyL-club)",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "postinstall": "node ./init-husky.js",
+    "lint": "eslint . --ext .ts",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@jest/globals": "^30.2.0",
+    "@types/jest": "^30.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.46.3",
+    "@typescript-eslint/parser": "^8.46.3",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
+    "husky": "^9.1.7",
+    "jest": "^30.2.0",
+    "jiti": "^2.6.1",
+    "ts-jest": "^29.4.5",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.49.0"
+  }
+}
