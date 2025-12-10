@@ -1,3 +1,7 @@
-async function main() {}
+async function main(): Promise<void> {
+  return await new Promise((resolve) => resolve);
+}
 
-main();
+main()
+  .then(() => process.exit(process.exitCode))
+  .catch(() => process.exit(process.exitCode));
