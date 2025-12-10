@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 import { defineConfig } from "eslint/config";
 
 export default defineConfig([
-  { ignores: ["node_modules/**", ".husky/**", "./build/**", "eslint.config.ts", "jest.config.js", "init-husky.js"] },
+  { ignores: ["node_modules/**", ".husky/**", "./build/**", "eslint.config.ts", "jest.config.js", "init-husky.js", "./tests/**"] },
   {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
     plugins: { js, "@typescript-eslint": tseslint.plugin },
