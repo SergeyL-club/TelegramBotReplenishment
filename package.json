@@ -12,9 +12,12 @@
   },
   "license": "AGPL-3.0",
   "author": "Sergey Lapshin (SergeyL-club)",
-  "type": "module",
-  "main": "index.js",
+  "type": "commonjs",
+  "main": "./build/main.js",
   "scripts": {
+    "dev": "ts-node src/main.ts",
+    "build": "tsc",
+    "start": "node ./build/main.js",
     "test": "jest --passWithNoTests",
     "postinstall": "node ./init-husky.js",
     "lint": "eslint . --ext .ts",
@@ -23,16 +26,26 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@jest/globals": "^30.2.0",
+    "@telegraf/types": "^9.2.1",
     "@types/jest": "^30.0.0",
+    "@types/node": "^24.10.2",
     "@typescript-eslint/eslint-plugin": "^8.46.3",
-    "@typescript-eslint/parser": "^8.46.3",
+    "@typescript-eslint/parser": "^8.49.0",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
     "jest": "^30.2.0",
     "jiti": "^2.6.1",
+    "prettier": "^3.7.4",
+    "prettier-eslint": "^16.4.2",
     "ts-jest": "^29.4.5",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.49.0"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "ioredis": "^5.8.2",
+    "telegraf": "^4.16.3"
   }
 }
