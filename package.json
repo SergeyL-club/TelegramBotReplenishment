@@ -12,7 +12,7 @@
   },
   "license": "AGPL-3.0",
   "author": "Sergey Lapshin (SergeyL-club)",
-  "type": "commonjs",
+  "type": "module",
   "main": "./build/main.js",
   "scripts": {
     "dev": "ts-node src/main.ts",
