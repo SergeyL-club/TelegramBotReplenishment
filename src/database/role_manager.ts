@@ -14,7 +14,7 @@ export class RoleManager {
     this.db_name = db_name;
   }
 
-  private role_path(options?: string): string {
+  private role_path(options: string = ""): string {
     return `${this.db_name}:role:${options}`;
   }
 
