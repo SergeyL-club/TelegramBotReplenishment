@@ -15,6 +15,7 @@ import { registry_roles } from "./registry_base_roles";
 
 // routes
 import { use_start } from "./routers/route_start";
+import { use_client } from "./routers/route_client";
 
 const telegram_controller = new TelegramController(process.env.BOT_TOKEN ?? "");
 
@@ -93,8 +94,9 @@ async function main(): Promise<void> {
 
   // routers
   await use_start(telegram_controller, user_manager);
+  await use_client(telegram_controller, command_manager, user_manager);
 
-  // start telegram events 
+  // start telegram events
   telegram_controller.reply_timer_start();
   await telegram_controller.start();
 }
