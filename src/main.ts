@@ -4,7 +4,14 @@ dotenv.config({ debug: false });
 import { Redis } from "ioredis";
 import { default_logger } from "./core/logger";
 import { TelegramController } from "./core/telegram_controller";
+
+// database
+import { RoleManager } from "./database/role_manager";
+import { CommandManager } from "./database/command_manager";
 import { UserManager } from "./database/user_manager";
+
+// registry roles, commands
+import { registry_roles } from "./registry_base_roles";
 
 // routes
 import { use_start } from "./routers/route_start";
@@ -13,6 +20,8 @@ const telegram_controller = new TelegramController(process.env.BOT_TOKEN ?? "");
 
 // database
 const redis_database = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
+const role_manager = new RoleManager(redis_database);
+const command_manager = new CommandManager(redis_database);
 const user_manager = new UserManager(redis_database);
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
@@ -64,10 +73,10 @@ function wait_for_redis_ready(redis: Redis): Promise<void> {
       cleanup();
       reject(err);
     }
-    function cleanup (): void {
+    function cleanup(): void {
       redis.off("ready", on_ready);
       redis.off("error", on_error);
-    };
+    }
 
     redis.on("ready", on_ready);
     redis.on("error", on_error);
@@ -77,6 +86,8 @@ function wait_for_redis_ready(redis: Redis): Promise<void> {
 async function main(): Promise<void> {
   await wait_for_redis_ready(redis_database);
   await default_logger.info("Redis already");
+
+  await registry_roles(role_manager, command_manager);
 
   use_start(telegram_controller, user_manager);
 
