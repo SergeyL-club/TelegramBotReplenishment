@@ -1,4 +1,4 @@
-import { Context } from "telegraf";
+import type { Context } from "telegraf";
 import { Telegraf } from "telegraf";
 import { default_logger } from "./logger";
 import { Timer } from "./timer";
