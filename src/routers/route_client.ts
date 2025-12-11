@@ -17,12 +17,23 @@ export async function use_client(
   const is_verify_command_client = is_verify_command.bind(null, command_manager, user_manager);
 
   telegram_controller.on_message(
+    is_verify_command_client.bind(null, Roles.CLIENT, commands[3]![1]) as MessageFilterFunction,
+    async (ctx, args) => {
+      const data = args as DataCommand;
+      if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[3]![1]) return;
+      if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
+      const user_id = ctx.from.id;
+      const user_roles = await user_manager.user_priority_roles(user_id);
+      await ctx.reply(`Вот ваш набор ролей: ${user_roles.join(", ")}`);
+    }
+  );
+
+  telegram_controller.on_message(
     is_verify_command_client.bind(null, Roles.CLIENT, commands[0]![1]) as MessageFilterFunction,
     async (ctx, args) => {
       const data = args as DataCommand;
       if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[0]![1]) return;
       if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
-      await default_logger.log(`Command ${data[0]} (${data[1]})`);
       const user_id = ctx.from.id;
       const user_roles = await user_manager.user_priority_roles(user_id);
       const command_names = await command_manager.command_names();
@@ -48,7 +59,6 @@ export async function use_client(
       if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[1]![1]) return;
       if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
       const token = ctx.message.text.trim().split(" ")[1] ?? "";
-      await default_logger.log(`Command ${data[1]} (${data[0]}) is token ${token}`);
       const roles = await role_manager.role_names();
       const is_verify = (await Promise.all(roles.map(async (role) => await role_manager.verify_role_token(role, token)))).findIndex(
         Boolean
