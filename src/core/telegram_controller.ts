@@ -7,9 +7,9 @@ export type { Context } from "telegraf";
 
 export type MessageFilterFunction = (
   ctx: Context
-) => [is_filter: boolean, next: (...args: any) => void] | Promise<[is_filter: boolean, next: (...args: any) => void]>;
+) => [is_filter: boolean, next: () => unknown[]] | Promise<[is_filter: boolean, next: () => unknown[]]>;
 
-export type MessageHandler = (ctx: Context, ...args: any) => void | Promise<void>;
+export type MessageHandler = (ctx: Context, ...args: unknown[]) => void | Promise<void>;
 export type CommandHandler = MessageHandler;
 export type StartHandler = MessageHandler;
 
@@ -46,7 +46,7 @@ export class TelegramController {
       await Promise.all(
         this.messages.map(async ([filter, callback]) => {
           const [is_filter, next] = await filter(ctx);
-          if (is_filter) callback(ctx, next());
+          if (is_filter) await callback(ctx, next());
         })
       );
     });
