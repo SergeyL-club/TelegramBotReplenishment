@@ -17,10 +17,10 @@ export async function use_client(
   const is_verify_command_client = is_verify_command.bind(null, command_manager, user_manager);
 
   telegram_controller.on_message(
-    is_verify_command_client.bind(null, Roles.CLIENT, commands[2]![1]) as MessageFilterFunction,
+    is_verify_command_client.bind(null, commands[2]![0], commands[2]![1]) as MessageFilterFunction,
     async (ctx, args) => {
       const data = args as DataCommand;
-      if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[2]![1]) return;
+      if (data[0] !== commands[2]![0] || data[1] !== commands[2]![1]) return;
       if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
       const user_id = ctx.from.id;
       const result_commands = await get_commands_menu(command_manager, user_manager, user_id);
@@ -30,10 +30,10 @@ export async function use_client(
   );
 
   telegram_controller.on_message(
-    is_verify_command_client.bind(null, Roles.CLIENT, commands[3]![1]) as MessageFilterFunction,
+    is_verify_command_client.bind(null, commands[3]![0], commands[3]![1]) as MessageFilterFunction,
     async (ctx, args) => {
       const data = args as DataCommand;
-      if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[3]![1]) return;
+      if (data[0] !== commands[3]![0] || data[1] !== commands[3]![1]) return;
       if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
       const user_id = ctx.from.id;
       const user_roles = await user_manager.user_priority_roles(user_id);
@@ -42,10 +42,10 @@ export async function use_client(
   );
 
   telegram_controller.on_message(
-    is_verify_command_client.bind(null, Roles.CLIENT, commands[0]![1]) as MessageFilterFunction,
+    is_verify_command_client.bind(null, commands[0]![0], commands[0]![1]) as MessageFilterFunction,
     async (ctx, args) => {
       const data = args as DataCommand;
-      if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[0]![1]) return;
+      if (data[0] !== commands[0]![0] || data[1] !== commands[0]![1]) return;
       if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
       const user_id = ctx.from.id;
       const user_roles = await user_manager.user_priority_roles(user_id);
@@ -66,10 +66,10 @@ export async function use_client(
   );
 
   telegram_controller.on_message(
-    is_verify_command_client.bind(null, Roles.CLIENT, commands[1]![1]) as MessageFilterFunction,
+    is_verify_command_client.bind(null, commands[1]![0], commands[1]![1]) as MessageFilterFunction,
     async (ctx, args) => {
       const data = args as DataCommand;
-      if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[1]![1]) return;
+      if (data[0] !== commands[1]![0] || data[1] !== commands[1]![1]) return;
       if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
       const token = ctx.message.text.trim().split(" ")[1] ?? "";
       const roles = await role_manager.role_names();
