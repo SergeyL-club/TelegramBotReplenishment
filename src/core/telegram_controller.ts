@@ -3,7 +3,7 @@ import { Telegraf } from "telegraf";
 import { default_logger } from "./logger";
 import { Timer } from "./timer";
 
-export type MessageFilterFunction = (text: string) => boolean;
+export type MessageFilterFunction = (ctx: Context) => boolean | Promise<boolean>;
 
 export type QueryHandler = (ctx: Context, action: string, id: string) => void | Promise<void>;
 export type MessageHandler = (ctx: Context) => void | Promise<void>;
@@ -20,10 +20,13 @@ export class TelegramController {
   private bot: Telegraf<Context>;
   private reply_timer: Timer;
 
-  private messages: { filter: MessageFilterFunction; callback: MessageHandler }[];
+  private messages: [filter: MessageFilterFunction, callback: MessageHandler][];
   private replys: { message_id: number; callback: CommandHandler; time: number; chat_id: number }[];
 
-  public constructor(bot_token: string, private logger = default_logger) {
+  public constructor(
+    bot_token: string,
+    private logger = default_logger
+  ) {
     this.reply_timer = new Timer(this.reply_timeout_handler.bind(this), 1000);
     this.messages = [];
     this.replys = [];
@@ -40,6 +43,7 @@ export class TelegramController {
   private message_handler(): void {
     this.bot.on("message", async (ctx) => {
       await this.logger.log("Message arrived: ", { message: ctx.message, chat: ctx.chat, from: ctx.from });
+      await Promise.all(this.messages.map(async ([filter, callback]) => (await filter(ctx) ? callback(ctx) : undefined)));
     });
   }
 
@@ -62,5 +66,10 @@ export class TelegramController {
   public async stop(reason: string = "SIGINT"): Promise<void> {
     this.bot.stop(reason);
     await this.logger.info(`Telegram Bot stopped due to ${reason}`);
+  }
+
+  // on function handler
+  public on_message(filter: MessageFilterFunction, callback: MessageHandler): void {
+    this.messages.push([filter, callback]);
   }
 }
