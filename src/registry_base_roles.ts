@@ -16,6 +16,7 @@ function get_role_key(value: string): keyof typeof Roles {
 
 export const commands: CommandData[] = [
   [Roles.CLIENT, "/codes", "Отдает список всех команд доступных пользователю"],
+  [Roles.CLIENT, "/code", "Команда для открытия доп функций (требует через пробел ключ функций)"],
   [Roles.ADMIN, "/codes", "Отдает список всех команд"],
 ] as const;
 

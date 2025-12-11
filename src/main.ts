@@ -94,7 +94,7 @@ async function main(): Promise<void> {
 
   // routers
   await use_start(telegram_controller, user_manager);
-  await use_client(telegram_controller, command_manager, user_manager);
+  await use_client(telegram_controller, role_manager, command_manager, user_manager);
 
   // start telegram events
   telegram_controller.reply_timer_start();
