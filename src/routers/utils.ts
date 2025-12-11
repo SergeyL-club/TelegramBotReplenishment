@@ -37,7 +37,7 @@ export async function is_verify_command(
   const commands = await command_manager.command_names(); // [role, command]
 
   // Находим, к какой роли вообще привязана эта команда
-  const command_role_name = roles.find((el) => commands.findIndex((cel) => cel[0] === el) !== -1);
+  const command_role_name = roles.find((el) => commands.findIndex((cel) => cel[0] === el && cel[1] === command_name) !== -1);
   if (!command_role_name) return [false, (() => []) as ReturnVerifyCommand["1"]];
 
   // Находим индексы в массиве приоритетов
