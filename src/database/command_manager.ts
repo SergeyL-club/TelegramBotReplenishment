@@ -18,7 +18,7 @@ export class CommandManager {
     return `${this.db_name}:command:${options}`;
   }
 
-  private async has_command(role_name: string, command_name: string): Promise<boolean> {
+  public async has_command(role_name: string, command_name: string): Promise<boolean> {
     return (await this.db_api.sismember(this.command_path("names"), `${role_name}|${command_name}`)) > 0;
   }
 
