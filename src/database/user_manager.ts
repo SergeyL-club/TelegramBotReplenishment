@@ -3,7 +3,8 @@ import type { Redis } from "ioredis";
 /* 
   Struct user
   user:names user_id:name
-  user:roles:user_id set role_names
+  user:roles:user_id:set set role_names
+  user:roles:user_id:list list role_names
   user:ids set ids
 */
 export class UserManager {
@@ -40,7 +41,8 @@ export class UserManager {
 
     const remove_user = this.db_api.multi();
     remove_user.hdel(this.user_path("names"), id.toString());
-    remove_user.del(this.user_path(`roles:${id}`));
+    remove_user.del(this.user_path(`roles:${id}:set`));
+    remove_user.del(this.user_path(`roles:${id}:list`));
     remove_user.srem(this.user_path("ids"), id.toString());
 
     const res = await remove_user.exec();
@@ -51,7 +53,8 @@ export class UserManager {
   public async add_role_to_user(role_name: string, user_id: number): Promise<boolean> {
     if (!(await this.has_user(user_id))) return false;
     const assing_role = this.db_api.multi();
-    assing_role.sadd(this.user_path(`roles:${user_id}`), role_name);
+    assing_role.sadd(this.user_path(`roles:${user_id}:set`), role_name);
+    assing_role.lpush(this.user_path(`roles:${user_id}:list`), role_name);
 
     const res = await assing_role.exec();
 
@@ -61,7 +64,8 @@ export class UserManager {
   public async remove_role_to_user(role_name: string, user_id: number): Promise<boolean> {
     if (!(await this.has_user(user_id))) return false;
     const delete_role = this.db_api.multi();
-    delete_role.srem(this.user_path(`roles:${user_id}`), role_name);
+    delete_role.srem(this.user_path(`roles:${user_id}:set`), 1, role_name);
+    delete_role.lrem(this.user_path(`roles:${user_id}:list`), 1, role_name);
 
     const res = await delete_role.exec();
 
@@ -70,7 +74,12 @@ export class UserManager {
 
   public async user_has_role(role_name: string, user_id: number): Promise<boolean> {
     if (!(await this.has_user(user_id))) return false;
-    return (await this.db_api.sismember(this.user_path(`roles:${user_id}`), role_name)) > 0;
+    return (await this.db_api.sismember(this.user_path(`roles:${user_id}:set`), role_name)) > 0;
+  }
+
+  public async user_priority_roles(user_id: number): Promise<string[]> {
+    if (!(await this.has_user(user_id)) || (await this.db_api.keys(this.user_path(`roles:${user_id}:list`))).length < 1) return [];
+    return await this.db_api.lrange(this.user_path(`roles:${user_id}:list`), 0, -1);
   }
 
   public async from_user_id_to_name(id: number): Promise<string | null> {
@@ -83,7 +92,7 @@ export class UserManager {
 
   public async user_names(): Promise<string[]> {
     const ids = await this.user_ids();
-    const names = await Promise.all(ids.map(id => this.from_user_id_to_name(id)));
+    const names = await Promise.all(ids.map((id) => this.from_user_id_to_name(id)));
     return names.filter((n): n is string => n !== null);
   }
 }
