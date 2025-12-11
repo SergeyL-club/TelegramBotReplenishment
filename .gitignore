@@ -2,3 +2,5 @@ node_modules
 redis-windows
 build
 logs
+
+.env
