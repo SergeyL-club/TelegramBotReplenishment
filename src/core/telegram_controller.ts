@@ -5,10 +5,11 @@ import { Timer } from "./timer";
 
 export type { Context } from "telegraf";
 
-export type MessageFilterFunction = (ctx: Context) => boolean | Promise<boolean>;
+export type MessageFilterFunction = (
+  ctx: Context
+) => [is_filter: boolean, next: (...args: any) => void] | Promise<[is_filter: boolean, next: (...args: any) => void]>;
 
-export type QueryHandler = (ctx: Context, action: string, id: string) => void | Promise<void>;
-export type MessageHandler = (ctx: Context) => void | Promise<void>;
+export type MessageHandler = (ctx: Context, ...args: any) => void | Promise<void>;
 export type CommandHandler = MessageHandler;
 export type StartHandler = MessageHandler;
 
@@ -42,7 +43,12 @@ export class TelegramController {
   private message_handler(): void {
     this.bot.on("message", async (ctx) => {
       await this.logger.log("Message arrived: ", { message: ctx.message, chat: ctx.chat, from: ctx.from });
-      await Promise.all(this.messages.map(async ([filter, callback]) => ((await filter(ctx)) ? await callback(ctx) : undefined)));
+      await Promise.all(
+        this.messages.map(async ([filter, callback]) => {
+          const [is_filter, next] = await filter(ctx);
+          if (is_filter) callback(ctx, next());
+        })
+      );
     });
   }
 
