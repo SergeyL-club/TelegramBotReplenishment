@@ -17,5 +17,5 @@ export async function use_start(telegram_controller: TelegramController, user_ma
     } else await default_logger.info(`User ${user_nickname} (${user_id}) is already registered`);
   });
 
-  await default_logger.info(`Registration finally route use_start`);
+  await default_logger.info("Registration finally route use_start");
 }

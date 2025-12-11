@@ -8,5 +8,5 @@ export async function use_client(
   command_manager: CommandManager,
   user_manager: UserManager
 ): Promise<void> {
-  await default_logger.info(`Registration finally route use_client`);
+  await default_logger.info("Registration finally route use_client");
 }
