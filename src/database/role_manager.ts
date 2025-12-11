@@ -18,7 +18,7 @@ export class RoleManager {
     return `${this.db_name}:role:${options}`;
   }
 
-  private async has_role(name: string): Promise<boolean> {
+  public async has_role(name: string): Promise<boolean> {
     return (await this.db_api.sismember(this.role_path("names"), name)) > 0;
   }
 
