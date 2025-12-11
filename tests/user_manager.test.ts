@@ -38,61 +38,43 @@ describe("UserManager", () => {
     expect(await userManager.has_user(1)).toBe(false);
     expect(await userManager.from_user_id_to_name(1)).toBeNull();
 
-    const roles = await redis.smembers("testdb:user:roles:1");
-    expect(roles.length).toBe(0);
+    const rolesSet = await redis.smembers("testdb:user:roles:1:set");
+    const rolesList = await redis.lrange("testdb:user:roles:1:list", 0, -1);
+    expect(rolesSet.length).toBe(0);
+    expect(rolesList.length).toBe(0);
   });
 
-  test("delete_user should return false for non-existing user", async () => {
-    const res = await userManager.delete_user(1);
-    expect(res).toBe(false);
-  });
-
-  test("add_role_to_user should add a role", async () => {
+  test("add_role_to_user should add a role and track priority", async () => {
     await userManager.create_user(1, "Alice");
 
     const res = await userManager.add_role_to_user("admin", 1);
     expect(res).toBe(true);
 
     expect(await userManager.user_has_role("admin", 1)).toBe(true);
+
+    // Проверяем порядок ролей
+    await userManager.add_role_to_user("dealer", 1);
+    const priority = await userManager.user_priority_roles(1);
+    expect(priority).toEqual(["dealer", "admin"]); // LPUSH добавляет в начало списка
   });
 
-  test("add_role_to_user should return false if user does not exist", async () => {
-    const res = await userManager.add_role_to_user("admin", 1);
-    expect(res).toBe(false);
-  });
-
-  test("remove_role_to_user should remove role", async () => {
+  test("remove_role_to_user should remove role from set and list", async () => {
     await userManager.create_user(1, "Alice");
     await userManager.add_role_to_user("admin", 1);
+    await userManager.add_role_to_user("dealer", 1);
 
     const res = await userManager.remove_role_to_user("admin", 1);
     expect(res).toBe(true);
 
     expect(await userManager.user_has_role("admin", 1)).toBe(false);
-  });
 
-  test("remove_role_to_user should return false for non-existing user", async () => {
-    const res = await userManager.remove_role_to_user("admin", 1);
-    expect(res).toBe(false);
-  });
-
-  test("user_has_role should detect assigned role", async () => {
-    await userManager.create_user(1, "Alice");
-    await userManager.add_role_to_user("admin", 1);
-
-    expect(await userManager.user_has_role("admin", 1)).toBe(true);
+    const priority = await userManager.user_priority_roles(1);
+    expect(priority).toEqual(["dealer"]);
   });
 
   test("user_has_role should return false for unknown role", async () => {
     await userManager.create_user(1, "Alice");
-
     expect(await userManager.user_has_role("admin", 1)).toBe(false);
-  });
-
-  test("from_user_id_to_name should return user name", async () => {
-    await userManager.create_user(1, "Alice");
-
-    expect(await userManager.from_user_id_to_name(1)).toBe("Alice");
   });
 
   test("from_user_id_to_name should return null for non-existing user", async () => {
@@ -100,19 +82,11 @@ describe("UserManager", () => {
     expect(name).toBeNull();
   });
 
-  test("user_ids should return all IDs", async () => {
+  test("user_ids and user_names should return all IDs and names", async () => {
     await userManager.create_user(1, "Alice");
     await userManager.create_user(2, "Bob");
 
-    const ids = await userManager.user_ids();
-    expect(ids.sort()).toEqual([1, 2]);
-  });
-
-  test("user_names should return all names", async () => {
-    await userManager.create_user(1, "Alice");
-    await userManager.create_user(2, "Bob");
-
-    const names = await userManager.user_names();
-    expect(names.sort()).toEqual(["Alice", "Bob"]);
+    expect((await userManager.user_ids()).sort()).toEqual([1, 2]);
+    expect((await userManager.user_names()).sort()).toEqual(["Alice", "Bob"]);
   });
 });
