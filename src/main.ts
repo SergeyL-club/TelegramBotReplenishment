@@ -52,31 +52,31 @@ function success_exit(): void {
 process.once("SIGINT", success_exit);
 process.once("SIGTERM", success_exit);
 
-function waitForRedisReady(redis: Redis): Promise<void> {
+function wait_for_redis_ready(redis: Redis): Promise<void> {
   return new Promise((resolve, reject) => {
     if (redis.status === "ready") return resolve();
 
-    const onReady = () => {
+    function on_ready(): void {
       cleanup();
       resolve();
-    };
-    const onError = (err: Error) => {
+    }
+    function on_error(err: Error): void {
       cleanup();
       reject(err);
-    };
-    const cleanup = () => {
-      redis.off("ready", onReady);
-      redis.off("error", onError);
+    }
+    function cleanup (): void {
+      redis.off("ready", on_ready);
+      redis.off("error", on_error);
     };
 
-    redis.on("ready", onReady);
-    redis.on("error", onError);
+    redis.on("ready", on_ready);
+    redis.on("error", on_error);
   });
 }
 
 async function main(): Promise<void> {
-  await waitForRedisReady(redis_database);
-  default_logger.info("Redis already");
+  await wait_for_redis_ready(redis_database);
+  await default_logger.info("Redis already");
 
   use_start(telegram_controller, user_manager);
 

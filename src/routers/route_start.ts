@@ -2,7 +2,7 @@ import type { TelegramController } from "../core/telegram_controller";
 import type { UserManager } from "../database/user_manager";
 import { default_logger } from "../core/logger";
 
-export function use_start(telegram_controller: TelegramController, user_manager: UserManager) {
+export function use_start(telegram_controller: TelegramController, user_manager: UserManager): void {
   telegram_controller.on_start(async (ctx) => {
     if (ctx.from === undefined) return;
     const user_id = ctx.from.id;
