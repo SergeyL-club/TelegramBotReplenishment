@@ -1,7 +1,9 @@
-import type { Context } from "telegraf";
+import { Context } from "telegraf";
 import { Telegraf } from "telegraf";
 import { default_logger } from "./logger";
 import { Timer } from "./timer";
+
+export type { Context } from "telegraf";
 
 export type MessageFilterFunction = (ctx: Context) => boolean | Promise<boolean>;
 
@@ -10,17 +12,12 @@ export type MessageHandler = (ctx: Context) => void | Promise<void>;
 export type CommandHandler = MessageHandler;
 export type StartHandler = MessageHandler;
 
-export enum MessageKeys {
-  TEXT = "text",
-  DATA = "data",
-  ENTITIES = "entities",
-}
-
 export class TelegramController {
   private bot: Telegraf<Context>;
   private reply_timer: Timer;
 
   private messages: [filter: MessageFilterFunction, callback: MessageHandler][];
+  private starts: StartHandler[];
   private replys: { message_id: number; callback: CommandHandler; time: number; chat_id: number }[];
 
   public constructor(
@@ -30,6 +27,7 @@ export class TelegramController {
     this.reply_timer = new Timer(this.reply_timeout_handler.bind(this), 1000);
     this.messages = [];
     this.replys = [];
+    this.starts = [];
     this.bot = new Telegraf(bot_token);
     this.bot.catch(async (err) => {
       await this.logger.error(
@@ -37,13 +35,21 @@ export class TelegramController {
         err instanceof Error ? (err.stack ? { stack: err.stack } : undefined) : { raw: err }
       );
     });
+    this.start_handler.call(this);
     this.message_handler.call(this);
   }
 
   private message_handler(): void {
     this.bot.on("message", async (ctx) => {
       await this.logger.log("Message arrived: ", { message: ctx.message, chat: ctx.chat, from: ctx.from });
-      await Promise.all(this.messages.map(async ([filter, callback]) => (await filter(ctx) ? callback(ctx) : undefined)));
+      await Promise.all(this.messages.map(async ([filter, callback]) => ((await filter(ctx)) ? await callback(ctx) : undefined)));
+    });
+  }
+
+  private start_handler(): void {
+    this.bot.start(async (ctx) => {
+      this.logger.log("Start: ", { message: ctx.message, chat: ctx.chat, from: ctx.from });
+      await Promise.all(this.starts.map(async (callback) => await callback(ctx)));
     });
   }
 
@@ -71,5 +77,9 @@ export class TelegramController {
   // on function handler
   public on_message(filter: MessageFilterFunction, callback: MessageHandler): void {
     this.messages.push([filter, callback]);
+  }
+
+  public on_start(callback: StartHandler): void {
+    this.starts.push(callback);
   }
 }
