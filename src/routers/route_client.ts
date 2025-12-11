@@ -4,7 +4,7 @@ import type { RoleManager } from "../database/role_manager";
 import type { CommandManager } from "../database/command_manager";
 import type { UserManager } from "../database/user_manager";
 import { default_logger } from "../core/logger";
-import { is_verify_command } from "./utils";
+import { get_commands_menu, is_verify_command } from "./utils";
 
 type DataCommand = [role_name: string, command_name: string];
 
@@ -15,6 +15,19 @@ export async function use_client(
   user_manager: UserManager
 ): Promise<void> {
   const is_verify_command_client = is_verify_command.bind(null, command_manager, user_manager);
+
+  telegram_controller.on_message(
+    is_verify_command_client.bind(null, Roles.CLIENT, commands[2]![1]) as MessageFilterFunction,
+    async (ctx, args) => {
+      const data = args as DataCommand;
+      if (data[0] !== (Roles.CLIENT as string) || data[1] !== commands[2]![1]) return;
+      if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
+      const user_id = ctx.from.id;
+      const result_commands = await get_commands_menu(command_manager, user_manager, user_id);
+      await ctx.telegram.setMyCommands(result_commands, { scope: { type: "chat", chat_id: ctx.chat!.id } });
+      await ctx.reply("Команды обновлены");
+    }
+  );
 
   telegram_controller.on_message(
     is_verify_command_client.bind(null, Roles.CLIENT, commands[3]![1]) as MessageFilterFunction,
@@ -76,6 +89,9 @@ export async function use_client(
       await default_logger.info(`Registration start role (${role_name}) in user ${user_nickname} (${user_id})`);
       const is_add = await user_manager.add_role_to_user(roles[is_verify]!, user_id);
       await default_logger.info(`Registration finally (${is_add}) role (${role_name}) in user ${user_nickname} (${user_id})`);
+
+      const result_commands = await get_commands_menu(command_manager, user_manager, user_id);
+      await ctx.telegram.setMyCommands(result_commands, { scope: { type: "chat", chat_id: ctx.chat!.id } });
       await ctx.reply(`Успешно добавлена роль ${role_name}. Меню обновлено`);
     }
   );

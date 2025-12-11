@@ -1,8 +1,14 @@
 import type { TelegramController } from "../core/telegram_controller";
 import type { UserManager } from "../database/user_manager";
+import type { CommandManager } from "../database/command_manager";
 import { default_logger } from "../core/logger";
+import { get_commands_menu } from "./utils";
 
-export async function use_start(telegram_controller: TelegramController, user_manager: UserManager): Promise<void> {
+export async function use_start(
+  telegram_controller: TelegramController,
+  command_manager: CommandManager,
+  user_manager: UserManager
+): Promise<void> {
   telegram_controller.on_start(async (ctx) => {
     if (ctx.from === undefined) return;
     const user_id = ctx.from.id;
@@ -15,6 +21,10 @@ export async function use_start(telegram_controller: TelegramController, user_ma
       const is_add = await user_manager.add_role_to_user("client", user_id);
       await default_logger.info(`Registration finally (${is_create}, ${is_add}) user ${user_nickname} (${user_id}) and add role client`);
     } else await default_logger.info(`User ${user_nickname} (${user_id}) is already registered`);
+
+    const result_commands = await get_commands_menu(command_manager, user_manager, user_id);
+    await ctx.telegram.setMyCommands(result_commands, { scope: { type: "chat", chat_id: ctx.chat!.id } });
+    await ctx.reply("Команды обновлены");
   });
 
   await default_logger.info("Registration finally route use_start");

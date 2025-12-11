@@ -4,6 +4,20 @@ import type { UserManager } from "../database/user_manager";
 
 type ReturnVerifyCommand = [is_filter: boolean, next: () => unknown[]];
 
+export async function get_commands_menu(
+  command_manager: CommandManager,
+  user_manager: UserManager,
+  user_id: number
+): Promise<{ command: string; description: string }[]> {
+  const user_roles = await user_manager.user_priority_roles(user_id);
+  const command_names = await command_manager.command_names();
+  return await Promise.all(
+    command_names
+      .filter((el) => user_roles.includes(el[0]))
+      .map(async (el) => ({ command: el[1], description: (await command_manager.command_descriptions(el[0], el[1]))! }))
+  );
+}
+
 export async function is_verify_command(
   command_manager: CommandManager,
   user_manager: UserManager,
