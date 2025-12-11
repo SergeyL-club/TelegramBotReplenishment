@@ -48,7 +48,7 @@ export class TelegramController {
 
   private start_handler(): void {
     this.bot.start(async (ctx) => {
-      this.logger.log("Start: ", { message: ctx.message, chat: ctx.chat, from: ctx.from });
+      await this.logger.log(`User ${ctx.from.username} (${ctx.from.id}) started working with the bot`);
       await Promise.all(this.starts.map(async (callback) => await callback(ctx)));
     });
   }
