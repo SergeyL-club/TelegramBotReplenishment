@@ -84,13 +84,17 @@ function wait_for_redis_ready(redis: Redis): Promise<void> {
 }
 
 async function main(): Promise<void> {
+  // redis connection is ready
   await wait_for_redis_ready(redis_database);
   await default_logger.info("Redis already");
 
+  // registry roles
   await registry_roles(role_manager, command_manager);
 
-  use_start(telegram_controller, user_manager);
+  // routers
+  await use_start(telegram_controller, user_manager);
 
+  // start telegram events 
   telegram_controller.reply_timer_start();
   await telegram_controller.start();
 }

@@ -2,7 +2,7 @@ import type { TelegramController } from "../core/telegram_controller";
 import type { UserManager } from "../database/user_manager";
 import { default_logger } from "../core/logger";
 
-export function use_start(telegram_controller: TelegramController, user_manager: UserManager): void {
+export async function use_start(telegram_controller: TelegramController, user_manager: UserManager): Promise<void> {
   telegram_controller.on_start(async (ctx) => {
     if (ctx.from === undefined) return;
     const user_id = ctx.from.id;
@@ -16,4 +16,6 @@ export function use_start(telegram_controller: TelegramController, user_manager:
       await default_logger.info(`Registration finally (${is_create}, ${is_add}) user ${user_nickname} (${user_id}) and add role client`);
     } else await default_logger.info(`User ${user_nickname} (${user_id}) is already registered`);
   });
+
+  await default_logger.info(`Registration finally route use_start`);
 }
