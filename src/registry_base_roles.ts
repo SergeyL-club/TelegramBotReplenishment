@@ -22,7 +22,6 @@ export const commands: CommandData[] = [
   [Roles.CLIENT, "/menu", "Обновить меню (испольуется если не обновилось само)"],
   [Roles.CLIENT, "/roles", "Отдает список всех ролей которые присвоены пользователю"],
   [Roles.CLIENT, "/menus", "Отдает список всех ролей которые присвоены пользователю"],
-  [Roles.ADMIN, "/test", "Просто тестовая команда"],
 ] as const;
 
 export const menus: MenuData[] = [

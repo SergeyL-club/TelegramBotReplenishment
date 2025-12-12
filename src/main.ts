@@ -10,6 +10,7 @@ import { RoleManager } from "./database/role_manager";
 import { CommandManager } from "./database/command_manager";
 import { UserManager } from "./database/user_manager";
 import { MenuManager } from "./database/menu_manager";
+import { MethodManager } from "./database/method_manager";
 
 // registry roles, commands
 import { registry_roles } from "./registry_base_roles";
@@ -17,6 +18,7 @@ import { registry_roles } from "./registry_base_roles";
 // routes
 import { use_start } from "./routers/route_start";
 import { use_client } from "./routers/route_client";
+import { use_admin } from "./routers/route_admin";
 
 const telegram_controller = new TelegramController(process.env.BOT_TOKEN ?? "");
 
@@ -26,6 +28,7 @@ const role_manager = new RoleManager(redis_database);
 const command_manager = new CommandManager(redis_database);
 const user_manager = new UserManager(redis_database);
 const menu_manager = new MenuManager(redis_database);
+const method_manager = new MethodManager(redis_database);
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegram_controller.reply_timer_stop();
@@ -96,6 +99,7 @@ async function main(): Promise<void> {
 
   // routers
   await use_start(telegram_controller, command_manager, user_manager, menu_manager);
+  await use_admin(telegram_controller, command_manager, user_manager, menu_manager, method_manager);
   await use_client(telegram_controller, role_manager, command_manager, user_manager, menu_manager);
 
   // start telegram events
