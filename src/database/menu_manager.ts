@@ -58,7 +58,7 @@ export class MenuManager {
 
   public async menu_positions(role_name: string, menu_name: string): Promise<Positions | null> {
     if (!(await this.has_menu(role_name, menu_name))) return null;
-    return JSON.parse((await this.db_api.hget(this.menu_path("positions"), `${role_name}|${menu_name}`))!);
+    return JSON.parse((await this.db_api.hget(this.menu_path("positions"), `${role_name}|${menu_name}`))!) as Promise<Positions | null>;
   }
 
   public async menu_names(): Promise<[role_name: string, menu_name: string][]> {

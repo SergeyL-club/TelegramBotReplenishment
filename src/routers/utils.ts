@@ -34,9 +34,10 @@ export async function get_menus(
 }
 
 export function fragmentation_menu(menus: [name: string, positions: Positions][]): string[][] {
-  let menu_commands: string[][] = [];
+  const menu_commands: string[][] = [];
   for (const menu_command of menus) {
-    let [row, col] = menu_command[1];
+    let row = menu_command[1][0];
+    const col = menu_command[1][1];
     while (menu_commands.length <= row) {
       menu_commands.push([]);
     }
