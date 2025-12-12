@@ -9,6 +9,7 @@ import { TelegramController } from "./core/telegram_controller";
 import { RoleManager } from "./database/role_manager";
 import { CommandManager } from "./database/command_manager";
 import { UserManager } from "./database/user_manager";
+import { MenuManager } from "./database/menu_manager";
 
 // registry roles, commands
 import { registry_roles } from "./registry_base_roles";
@@ -24,6 +25,7 @@ const redis_database = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:637
 const role_manager = new RoleManager(redis_database);
 const command_manager = new CommandManager(redis_database);
 const user_manager = new UserManager(redis_database);
+const menu_manager = new MenuManager(redis_database);
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegram_controller.reply_timer_stop();
@@ -90,11 +92,11 @@ async function main(): Promise<void> {
   await default_logger.info("Redis already");
 
   // registry roles
-  await registry_roles(role_manager, command_manager);
+  await registry_roles(role_manager, command_manager, menu_manager);
 
   // routers
-  await use_start(telegram_controller, command_manager, user_manager);
-  await use_client(telegram_controller, role_manager, command_manager, user_manager);
+  await use_start(telegram_controller, command_manager, user_manager, menu_manager);
+  await use_client(telegram_controller, role_manager, command_manager, user_manager, menu_manager);
 
   // start telegram events
   telegram_controller.reply_timer_start();

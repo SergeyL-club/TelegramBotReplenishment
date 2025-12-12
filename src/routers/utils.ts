@@ -1,6 +1,7 @@
 import type { Context } from "telegraf";
 import type { CommandManager } from "../database/command_manager";
 import type { UserManager } from "../database/user_manager";
+import type { MenuManager, Positions } from "../database/menu_manager";
 
 type ReturnVerifyCommand = [is_filter: boolean, next: () => unknown[]];
 
@@ -8,17 +9,46 @@ export async function get_commands_menu(
   command_manager: CommandManager,
   user_manager: UserManager,
   user_id: number
-): Promise<{ command: string; description: string }[]> {
+): Promise<[command: string, description: string][]> {
   const user_roles = await user_manager.user_priority_roles(user_id);
   const command_names = await command_manager.command_names();
   return await Promise.all(
     command_names
       .filter((el) => user_roles.includes(el[0]))
-      .map(async (el) => ({ command: el[1], description: (await command_manager.command_descriptions(el[0], el[1]))! }))
+      .map(async (el) => [el[1], (await command_manager.command_descriptions(el[0], el[1]))!])
   );
 }
 
+export async function get_menus(
+  menu_manager: MenuManager,
+  user_manager: UserManager,
+  user_id: number
+): Promise<[name: string, positions: Positions][]> {
+  const user_roles = await user_manager.user_priority_roles(user_id);
+  const menu_names = await menu_manager.menu_names();
+  return await Promise.all(
+    menu_names.filter((el) => user_roles.includes(el[0])).map(async (el) => [el[1], (await menu_manager.menu_positions(el[0], el[1]))!])
+  );
+}
+
+export function fragmentation_menu(menus: [name: string, positions: Positions][]): string[][] {
+  let menu_commands: string[][] = [];
+  for (const menu_command of menus) {
+    let [row, col] = menu_command[1];
+    while (menu_commands.length <= row) {
+      menu_commands.push([]);
+    }
+    while (menu_commands[row]?.[col]) {
+      row++;
+      if (!menu_commands[row]) menu_commands[row] = [];
+    }
+    menu_commands[row]![col] = menu_command[0];
+  }
+  return menu_commands;
+}
+
 export async function is_verify_command(
+  menu_manager: MenuManager,
   command_manager: CommandManager,
   user_manager: UserManager,
   role_name: string,
@@ -34,7 +64,7 @@ export async function is_verify_command(
   const user_id = ctx.from.id;
 
   const roles = await user_manager.user_priority_roles(user_id); // ordered roles (0 = highest)
-  const commands = await command_manager.command_names(); // [role, command]
+  const commands = (await command_manager.command_names()).concat(await menu_manager.menu_names()); // [role, command]
 
   // Находим, к какой роли вообще привязана эта команда
   const command_role_name = roles.find((el) => commands.findIndex((cel) => cel[0] === el && cel[1] === command_name) !== -1);

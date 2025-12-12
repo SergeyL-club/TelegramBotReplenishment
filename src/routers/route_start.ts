@@ -1,13 +1,15 @@
 import type { TelegramController } from "../core/telegram_controller";
 import type { UserManager } from "../database/user_manager";
 import type { CommandManager } from "../database/command_manager";
+import type { MenuManager } from "../database/menu_manager";
 import { default_logger } from "../core/logger";
-import { get_commands_menu } from "./utils";
+import { fragmentation_menu, get_commands_menu, get_menus } from "./utils";
 
 export async function use_start(
   telegram_controller: TelegramController,
   command_manager: CommandManager,
-  user_manager: UserManager
+  user_manager: UserManager,
+  menu_manager: MenuManager
 ): Promise<void> {
   telegram_controller.on_start(async (ctx) => {
     if (ctx.from === undefined) return;
@@ -23,8 +25,12 @@ export async function use_start(
     } else await default_logger.info(`User ${user_nickname} (${user_id}) is already registered`);
 
     const result_commands = await get_commands_menu(command_manager, user_manager, user_id);
-    await ctx.telegram.setMyCommands(result_commands, { scope: { type: "chat", chat_id: ctx.chat!.id } });
-    await ctx.reply("Команды обновлены");
+    await ctx.telegram.setMyCommands(
+      result_commands.map((el) => ({ command: el[0], description: el[1] })),
+      { scope: { type: "chat", chat_id: ctx.chat!.id } }
+    );
+    const result_menus = await get_menus(menu_manager, user_manager, user_id);
+    await ctx.reply("Команды обновлены", { reply_markup: { keyboard: fragmentation_menu(result_menus), resize_keyboard: true } });
   });
 
   await default_logger.info("Registration finally route use_start");

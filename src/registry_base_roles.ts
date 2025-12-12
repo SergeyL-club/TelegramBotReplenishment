@@ -1,5 +1,6 @@
 import type { RoleManager } from "./database/role_manager";
 import type { CommandManager } from "./database/command_manager";
+import type { MenuManager } from "./database/menu_manager";
 import { default_logger } from "./core/logger";
 
 export enum Roles {
@@ -9,9 +10,10 @@ export enum Roles {
 }
 
 export type CommandData = Parameters<CommandManager["create_command"]>;
+export type MenuData = Parameters<MenuManager["create_menu"]>;
 
 function get_role_key(value: string): keyof typeof Roles {
-  return (Object.keys(Roles) as Array<keyof typeof Roles>).find((key) => Roles[key] as string === value) as keyof typeof Roles;
+  return (Object.keys(Roles) as Array<keyof typeof Roles>).find((key) => (Roles[key] as string) === value) as keyof typeof Roles;
 }
 
 export const commands: CommandData[] = [
@@ -19,9 +21,15 @@ export const commands: CommandData[] = [
   [Roles.CLIENT, "/code", "Команда для открытия доп функций (требует через пробел ключ функций)"],
   [Roles.CLIENT, "/menu", "Обновить меню (испольуется если не обновилось само)"],
   [Roles.CLIENT, "/roles", "Отдает список всех ролей которые присвоены пользователю"],
+  [Roles.CLIENT, "/menus", "Отдает список всех ролей которые присвоены пользователю"],
+  [Roles.ADMIN, "/test", "Просто тестовая команда"],
 ] as const;
 
-export async function registry_roles(role_manager: RoleManager, command_manager: CommandManager): Promise<void> {
+export const menus: MenuData[] = [
+  [Roles.ADMIN, "Список методов оплаты", "Отдает список методов оплаты и 2 функции по добавлени и удалению методов", [0, 0]],
+] as const;
+
+export async function registry_roles(role_manager: RoleManager, command_manager: CommandManager, menu_manager: MenuManager): Promise<void> {
   await Promise.all(
     Object.values(Roles).map(async (role_name) => {
       await default_logger.log(`Registration role ${role_name} start`);
@@ -42,6 +50,18 @@ export async function registry_roles(role_manager: RoleManager, command_manager:
           `Registration finally (${is_create}) command ${command_name} (${role_name}) is description ${descrtiption}`
         );
       } else await default_logger.log(`Command ${command_name} (${role_name}) is already registry`);
+    })
+  );
+
+  await Promise.all(
+    menus.map(async ([role_name, menu_name, descrtiption, positions]) => {
+      await default_logger.log(`Registration command ${menu_name} (${role_name}) start`);
+      if (!(await menu_manager.has_menu(role_name, menu_name))) {
+        const is_create = await menu_manager.create_menu(role_name, menu_name, descrtiption, positions);
+        await default_logger.log(
+          `Registration finally (${is_create}) menu ${menu_name} (${role_name}) is description ${descrtiption} and positions ${JSON.stringify(positions)}`
+        );
+      } else await default_logger.log(`Command ${menu_name} (${role_name}) is already registry`);
     })
   );
 }
