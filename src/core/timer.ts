@@ -8,7 +8,9 @@ export class Timer {
 
   public start(): void {
     if (this.interval_id !== null) return; // уже запущен
-    this.interval_id = setInterval(this.callback, this.interval_ms);
+    this.interval_id = setInterval(() => {
+      void this.callback();
+    }, this.interval_ms);
   }
 
   public stop(): void {
