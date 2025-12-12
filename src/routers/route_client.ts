@@ -15,7 +15,7 @@ export async function use_client(
   user_manager: UserManager,
   menu_manager: MenuManager
 ): Promise<void> {
-  const is_verify_command_client = is_verify_command.bind(null, menu_manager, command_manager, user_manager);
+  const is_verify_command_client = is_verify_command.bind(null, menu_manager, command_manager, user_manager, false);
 
   telegram_controller.on_message(
     is_verify_command_client.bind(null, commands[2]![0], commands[2]![1]) as MessageFilterFunction,

@@ -53,20 +53,24 @@ export async function is_verify_command(
   menu_manager: MenuManager,
   command_manager: CommandManager,
   user_manager: UserManager,
+  is_menu: boolean,
   role_name: string,
   command_name: string,
   ctx: Context
 ): Promise<ReturnVerifyCommand> {
-  if (!ctx.message || !("entities" in ctx.message)) return [false, (() => []) as ReturnVerifyCommand["1"]];
-  if (ctx.message.entities[0]?.type !== "bot_command") return [false, (() => []) as ReturnVerifyCommand["1"]];
+  if (!ctx.message || !("text" in ctx.message)) return [false, (() => []) as ReturnVerifyCommand["1"]];
+  if (!is_menu) {
+    if (!ctx.message || !("entities" in ctx.message)) return [false, (() => []) as ReturnVerifyCommand["1"]];
+    if (ctx.message.entities[0]?.type !== "bot_command") return [false, (() => []) as ReturnVerifyCommand["1"]];
+  }
 
   const command_name_ctx = ctx.message.text.trim().split(" ")[0]!;
-  if (ctx.from === undefined || command_name_ctx !== command_name) return [false, (() => []) as ReturnVerifyCommand["1"]];
+  if (ctx.from === undefined || (!is_menu && command_name_ctx !== command_name)) return [false, (() => []) as ReturnVerifyCommand["1"]];
 
   const user_id = ctx.from.id;
 
   const roles = await user_manager.user_priority_roles(user_id); // ordered roles (0 = highest)
-  const commands = (await command_manager.command_names()).concat(await menu_manager.menu_names()); // [role, command]
+  const commands = is_menu ? await menu_manager.menu_names() : await command_manager.command_names(); // [role, command]
 
   // Находим, к какой роли вообще привязана эта команда
   const command_role_name = roles.find((el) => commands.findIndex((cel) => cel[0] === el && cel[1] === command_name) !== -1);
