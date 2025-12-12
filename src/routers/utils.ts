@@ -65,7 +65,7 @@ export async function is_verify_command(
     if (ctx.message.entities[0]?.type !== "bot_command") return [false, (() => []) as ReturnVerifyCommand["1"]];
   }
 
-  const command_name_ctx = ctx.message.text.trim().split(" ")[0]!;
+  const command_name_ctx = is_menu  ? ctx.message.text.trim() : ctx.message.text.trim().split(" ")[0]!;
   if (ctx.from === undefined || (!is_menu && command_name_ctx !== command_name)) return [false, (() => []) as ReturnVerifyCommand["1"]];
 
   const user_id = ctx.from.id;
@@ -74,7 +74,7 @@ export async function is_verify_command(
   const commands = is_menu ? await menu_manager.menu_names() : await command_manager.command_names(); // [role, command]
 
   // Находим, к какой роли вообще привязана эта команда
-  const command_role_name = roles.find((el) => commands.findIndex((cel) => cel[0] === el && cel[1] === command_name) !== -1);
+  const command_role_name = roles.find((el) => commands.findIndex((cel) => cel[0] === el && cel[1] === command_name_ctx) !== -1);
   if (!command_role_name) return [false, (() => []) as ReturnVerifyCommand["1"]];
 
   // Находим индексы в массиве приоритетов

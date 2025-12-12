@@ -71,13 +71,13 @@ export class TelegramController {
               await callback(ctx);
           })
         );
-
-      await Promise.all(
-        this.messages.map(async ([filter, callback]) => {
-          const [is_filter, next] = await filter(ctx);
-          if (is_filter) await callback(ctx, next());
-        })
-      );
+      else
+        await Promise.all(
+          this.messages.map(async ([filter, callback]) => {
+            const [is_filter, next] = await filter(ctx);
+            if (is_filter) await callback(ctx, next());
+          })
+        );
     });
   }
 
