@@ -5,6 +5,8 @@ import type { MenuManager, Positions } from "../database/menu_manager";
 
 type ReturnVerifyCommand = [is_filter: boolean, next: () => unknown[]];
 
+export type DataCommand = [role_name: string, command_name: string];
+
 export async function get_commands_menu(
   command_manager: CommandManager,
   user_manager: UserManager,
