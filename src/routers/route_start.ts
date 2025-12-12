@@ -3,7 +3,7 @@ import type { UserManager } from "../database/user_manager";
 import type { CommandManager } from "../database/command_manager";
 import type { MenuManager } from "../database/menu_manager";
 import { default_logger } from "../core/logger";
-import { fragmentation_menu, get_commands_menu, get_menus } from "./utils";
+import { get_commands_menu, update_menu } from "./utils";
 
 export async function use_start(
   telegram_controller: TelegramController,
@@ -29,8 +29,7 @@ export async function use_start(
       result_commands.map((el) => ({ command: el[0], description: el[1] })),
       { scope: { type: "chat", chat_id: ctx.chat!.id } }
     );
-    const result_menus = await get_menus(menu_manager, user_manager, user_id);
-    await ctx.reply("Команды обновлены", { reply_markup: { keyboard: fragmentation_menu(result_menus), resize_keyboard: true } });
+    await ctx.reply("Команды обновлены", { reply_markup: await update_menu(user_id, menu_manager, user_manager) });
   });
 
   await default_logger.info("Registration finally route use_start");

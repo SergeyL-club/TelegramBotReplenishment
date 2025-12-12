@@ -1,11 +1,16 @@
 import type { Context } from "telegraf";
 import type { CommandManager } from "../database/command_manager";
-import type { UserManager } from "../database/user_manager";
-import type { MenuManager, Positions } from "../database/menu_manager";
+import { UserManager } from "../database/user_manager";
+import { MenuManager, Positions } from "../database/menu_manager";
 
 type ReturnVerifyCommand = [is_filter: boolean, next: () => unknown[]];
 
 export type DataCommand = [role_name: string, command_name: string];
+
+export async function update_menu(user_id: number, menu_manager: MenuManager, user_manager: UserManager) {
+  const result_menus = await get_menus(menu_manager, user_manager, user_id);
+  return { keyboard: fragmentation_menu(result_menus), resize_keyboard: true };
+}
 
 export async function get_commands_menu(
   command_manager: CommandManager,
@@ -65,7 +70,7 @@ export async function is_verify_command(
     if (ctx.message.entities[0]?.type !== "bot_command") return [false, (() => []) as ReturnVerifyCommand["1"]];
   }
 
-  const command_name_ctx = is_menu  ? ctx.message.text.trim() : ctx.message.text.trim().split(" ")[0]!;
+  const command_name_ctx = is_menu ? ctx.message.text.trim() : ctx.message.text.trim().split(" ")[0]!;
   if (ctx.from === undefined || (!is_menu && command_name_ctx !== command_name)) return [false, (() => []) as ReturnVerifyCommand["1"]];
 
   const user_id = ctx.from.id;
