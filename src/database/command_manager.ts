@@ -2,7 +2,7 @@ import type { Redis } from "ioredis";
 
 /* 
   Struct command
-  command:descriptions role_name|name:token
+  command:descriptions role_name|name:description
   command:names set role_name|names
 */
 export class CommandManager {
