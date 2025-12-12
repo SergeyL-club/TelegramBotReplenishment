@@ -28,7 +28,6 @@ export async function use_admin(
       const data = args as DataCommand;
       if (data[0] !== menus[0]![0] || data[1] !== menus[0]![1]) return;
       if (!ctx.message || !("text" in ctx.message) || ctx.from === undefined) return;
-      const user_id = ctx.from.id;
       const methods = await method_manager.method_names();
       await ctx.reply(`Список доступных методов оплаты: <code>${methods.length === 0 ? "пусто" : methods.join("</code>, <code>")}</code>`, {
         reply_markup: {
@@ -78,7 +77,7 @@ export async function use_admin(
 
   telegram_controller.on_callback(callbacks[0]![1], async (ctx) => {
     await ctx.answerCbQuery();
-    const is = await ctx.reply(`Ответьте на это сообщение форматом: name description`, {
+    const is = await ctx.reply("Ответьте на это сообщение форматом: name description", {
       reply_markup: { force_reply: true },
     });
     telegram_controller.once_answers(is.message_id, is.chat.id, add_method_deal, 1 * 60 * 1000);
@@ -86,7 +85,7 @@ export async function use_admin(
 
   telegram_controller.on_callback(callbacks[1]![1], async (ctx) => {
     await ctx.answerCbQuery();
-    const is = await ctx.reply(`Ответьте на это сообщение форматом: name`, {
+    const is = await ctx.reply("Ответьте на это сообщение форматом: name", {
       reply_markup: { force_reply: true },
     });
     telegram_controller.once_answers(is.message_id, is.chat.id, del_method_deal, 1 * 60 * 1000);

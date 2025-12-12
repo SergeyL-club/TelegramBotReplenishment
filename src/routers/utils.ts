@@ -7,7 +7,11 @@ type ReturnVerifyCommand = [is_filter: boolean, next: () => unknown[]];
 
 export type DataCommand = [role_name: string, command_name: string];
 
-export async function update_menu(user_id: number, menu_manager: MenuManager, user_manager: UserManager) {
+export async function update_menu(
+  user_id: number,
+  menu_manager: MenuManager,
+  user_manager: UserManager
+): Promise<{ keyboard: string[][]; resize_keyboard: boolean }> {
   const result_menus = await get_menus(menu_manager, user_manager, user_id);
   return { keyboard: fragmentation_menu(result_menus), resize_keyboard: true };
 }

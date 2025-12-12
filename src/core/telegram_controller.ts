@@ -52,7 +52,7 @@ export class TelegramController {
     const unlock = await this.answer_mutex.lock();
     try {
       for (let i = 0; i < this.answers.length; i++) {
-        const [mid, cid, cb] = this.answers[i]!;
+        const [mid, cid] = this.answers[i]!;
   
         if (cid === chat_id && mid === message_id) {
           this.answers.splice(i, 1); // удалить
