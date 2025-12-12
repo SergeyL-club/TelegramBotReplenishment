@@ -2,6 +2,7 @@ import type { Context } from "telegraf";
 import { Telegraf } from "telegraf";
 import { default_logger } from "./logger";
 import { Timer } from "./timer";
+import { Mutex } from "./mutex";
 
 export type { Context } from "telegraf";
 
@@ -18,6 +19,7 @@ export type AnswerHandler = StartHandler;
 export class TelegramController {
   private bot: Telegraf<Context>;
   private reply_timer: Timer;
+  private answer_mutex: Mutex;
 
   private messages: [filter: MessageFilterFunction, callback: MessageHandler][];
   private starts: StartHandler[];
@@ -33,6 +35,7 @@ export class TelegramController {
     this.starts = [];
     this.callbacks = [];
     this.answers = [];
+    this.answer_mutex = new Mutex();
     this.bot = new Telegraf(bot_token);
     this.bot.catch(async (err) => {
       await this.logger.error(
@@ -43,6 +46,22 @@ export class TelegramController {
     this.start_handler.call(this);
     this.callback_handler.call(this);
     this.message_handler.call(this);
+  }
+
+  private async delete_answer_handler(message_id: number, chat_id: number): Promise<void> {
+    const unlock = await this.answer_mutex.lock();
+    try {
+      for (let i = 0; i < this.answers.length; i++) {
+        const [mid, cid, cb] = this.answers[i]!;
+  
+        if (cid === chat_id && mid === message_id) {
+          this.answers.splice(i, 1); // удалить
+          return;
+        }
+      }
+    } finally {
+      unlock();
+    }
   }
 
   private callback_handler(): void {
@@ -67,8 +86,10 @@ export class TelegramController {
       if ("reply_to_message" in ctx.message)
         return await Promise.all(
           this.answers.map(async ([message_id, chat_id, callback]) => {
-            if ("reply_to_message" in ctx.message && ctx.message.reply_to_message.message_id === message_id && ctx.chat.id === chat_id)
+            if ("reply_to_message" in ctx.message && ctx.message.reply_to_message.message_id === message_id && ctx.chat.id === chat_id) {
+              await this.delete_answer_handler(message_id, chat_id);
               await callback(ctx);
+            }
           })
         );
       else
@@ -92,7 +113,7 @@ export class TelegramController {
     const now = Date.now();
     for (const answer of this.answers) {
       if (answer[3] < now) {
-        this.answers = this.answers.filter((el) => JSON.stringify(el) !== JSON.stringify(answer));
+        await this.delete_answer_handler(answer[0], answer[1]);
         await this.bot.telegram.sendMessage(answer[1], "Время ответа истекло", { reply_parameters: { message_id: answer[0] } });
       }
     }
