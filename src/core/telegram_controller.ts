@@ -13,6 +13,7 @@ export type MessageHandler = (ctx: Context, ...args: unknown[]) => void | Promis
 export type CommandHandler = MessageHandler;
 export type StartHandler = (ctx: Context) => void | Promise<void>;
 export type CallbackHandler = StartHandler;
+export type AnswerHandler = StartHandler;
 
 export class TelegramController {
   private bot: Telegraf<Context>;
@@ -21,6 +22,7 @@ export class TelegramController {
   private messages: [filter: MessageFilterFunction, callback: MessageHandler][];
   private starts: StartHandler[];
   private callbacks: [name: string, callback: CallbackHandler][];
+  private answers: [message_id: number, chat_id: number, callback: AnswerHandler, time: number][];
 
   public constructor(
     bot_token: string,
@@ -30,6 +32,7 @@ export class TelegramController {
     this.messages = [];
     this.starts = [];
     this.callbacks = [];
+    this.answers = [];
     this.bot = new Telegraf(bot_token);
     this.bot.catch(async (err) => {
       await this.logger.error(
@@ -61,6 +64,14 @@ export class TelegramController {
   private message_handler(): void {
     this.bot.on("message", async (ctx) => {
       await this.logger.log("Message arrived: ", { message: ctx.message, chat: ctx.chat, from: ctx.from });
+      if ("reply_to_message" in ctx.message)
+        return await Promise.all(
+          this.answers.map(async ([message_id, chat_id, callback]) => {
+            if ("reply_to_message" in ctx.message && ctx.message.reply_to_message.message_id === message_id && ctx.chat.id === chat_id)
+              await callback(ctx);
+          })
+        );
+
       await Promise.all(
         this.messages.map(async ([filter, callback]) => {
           const [is_filter, next] = await filter(ctx);
@@ -77,7 +88,15 @@ export class TelegramController {
     });
   }
 
-  private reply_timeout_handler(): void {}
+  private async reply_timeout_handler(): Promise<void> {
+    const now = Date.now();
+    for (const answer of this.answers) {
+      if (answer[3] < now) {
+        this.answers = this.answers.filter((el) => JSON.stringify(el) !== JSON.stringify(answer));
+        await this.bot.telegram.sendMessage(answer[1], "Время ответа истекло", { reply_parameters: { message_id: answer[0] } });
+      }
+    }
+  }
 
   public reply_timer_start(): void {
     this.reply_timer.start();
@@ -107,7 +126,11 @@ export class TelegramController {
     this.starts.push(callback);
   }
 
-  public on_callback(name: string, callback: CallbackHandler) {
+  public on_callback(name: string, callback: CallbackHandler): void {
     this.callbacks.push([name, callback]);
+  }
+
+  public once_answers(message_id: number, chat_id: number, callback: AnswerHandler, time: number = Date.now() + 10 * 1000): void {
+    this.answers.push([message_id, chat_id, callback, time]);
   }
 }
