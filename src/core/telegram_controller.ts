@@ -11,7 +11,8 @@ export type MessageFilterFunction = (
 
 export type MessageHandler = (ctx: Context, ...args: unknown[]) => void | Promise<void>;
 export type CommandHandler = MessageHandler;
-export type StartHandler = MessageHandler;
+export type StartHandler = (ctx: Context) => void | Promise<void>;
+export type CallbackHandler = StartHandler;
 
 export class TelegramController {
   private bot: Telegraf<Context>;
@@ -19,7 +20,7 @@ export class TelegramController {
 
   private messages: [filter: MessageFilterFunction, callback: MessageHandler][];
   private starts: StartHandler[];
-  private replys: { message_id: number; callback: CommandHandler; time: number; chat_id: number }[];
+  private callbacks: [name: string, callback: CallbackHandler][];
 
   public constructor(
     bot_token: string,
@@ -27,8 +28,8 @@ export class TelegramController {
   ) {
     this.reply_timer = new Timer(this.reply_timeout_handler.bind(this), 1000);
     this.messages = [];
-    this.replys = [];
     this.starts = [];
+    this.callbacks = [];
     this.bot = new Telegraf(bot_token);
     this.bot.catch(async (err) => {
       await this.logger.error(
@@ -37,7 +38,24 @@ export class TelegramController {
       );
     });
     this.start_handler.call(this);
+    this.callback_handler.call(this);
     this.message_handler.call(this);
+  }
+
+  private callback_handler(): void {
+    this.bot.on("callback_query", async (ctx) => {
+      await this.logger.log("Callback arrived: ", {
+        message: ctx.message,
+        chat: ctx.chat,
+        from: ctx.from,
+        callback_query: ctx.callbackQuery,
+      });
+      await Promise.all(
+        this.callbacks.map(async ([name, callback]) => {
+          if ("data" in ctx.callbackQuery && ctx.callbackQuery.data === name) await callback(ctx);
+        })
+      );
+    });
   }
 
   private message_handler(): void {
@@ -87,5 +105,9 @@ export class TelegramController {
 
   public on_start(callback: StartHandler): void {
     this.starts.push(callback);
+  }
+
+  public on_callback(name: string, callback: CallbackHandler) {
+    this.callbacks.push([name, callback]);
   }
 }
