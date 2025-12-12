@@ -51,8 +51,8 @@ export class MethodManager {
     return await this.db_api.hget(this.method_path("descriptions"), method_name);
   }
 
-  public async method_names(): Promise<[method_name: string][]> {
+  public async method_names(): Promise<string[]> {
     const memory = await this.db_api.smembers(this.method_path("names"));
-    return memory.map((el) => el.split("|")) as [method_name: string][];
+    return memory;
   }
 }
