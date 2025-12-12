@@ -2,7 +2,7 @@ export class Timer {
   private interval_id: NodeJS.Timeout | null = null;
 
   public constructor(
-    private callback: () => void,
+    private callback: () => Promise<void> | void,
     private interval_ms: number
   ) {}
 
