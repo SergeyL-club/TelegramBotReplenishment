@@ -20,6 +20,7 @@ import { use_start } from "./routers/route_start";
 import { use_client } from "./routers/route_client";
 import { use_admin } from "./routers/route_admin";
 import { use_dealer } from "./routers/route_dealer";
+import { use_deal } from "./routers/route_deal";
 
 const telegram_controller = new TelegramController(process.env.BOT_TOKEN ?? "");
 
@@ -101,6 +102,7 @@ async function main(): Promise<void> {
   // routers
   await use_start(telegram_controller, command_manager, user_manager, menu_manager);
   await use_admin(telegram_controller, command_manager, user_manager, menu_manager, method_manager);
+  await use_deal(telegram_controller, command_manager, user_manager, menu_manager, method_manager);
   await use_dealer(telegram_controller, command_manager, user_manager, menu_manager);
   await use_client(telegram_controller, role_manager, command_manager, user_manager, menu_manager);
 
