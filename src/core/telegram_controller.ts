@@ -74,7 +74,7 @@ export class TelegramController {
       });
       await Promise.all(
         this.callbacks.map(async ([name, callback]) => {
-          if ("data" in ctx.callbackQuery && ctx.callbackQuery.data === name) await callback(ctx);
+          if ("data" in ctx.callbackQuery && ctx.callbackQuery.data.includes(name)) await callback(ctx);
         })
       );
     });
