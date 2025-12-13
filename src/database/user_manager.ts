@@ -1,4 +1,5 @@
 import type { Redis } from "ioredis";
+import { Roles } from "../registry_base_roles";
 
 /* 
   Struct user
@@ -7,6 +8,8 @@ import type { Redis } from "ioredis";
   user:roles:user_id:set set role_names
   user:roles:user_id:list list role_names
   user:ids set ids
+
+  user:dealer:is_ready set user_ids
 
   user:deals:user_id set deal_ids
 */
@@ -51,6 +54,17 @@ export class UserManager {
     remove_user.srem(this.user_path("ids"), id.toString());
 
     const res = await remove_user.exec();
+
+    return res?.every(([err]) => err === null) ?? false;
+  }
+
+  public async add_dealer_ready(user_id: number, is: boolean): Promise<boolean> {
+    if (!(await this.has_user(user_id)) || !(await this.user_has_role(Roles.DEALER, user_id))) return false;
+    const dealer_ready = this.db_api.multi();
+    if (is) dealer_ready.sadd(this.user_path("dealer:is_ready"), user_id.toString());
+    else dealer_ready.srem(this.user_path("dealer:is_ready"), user_id.toString());
+
+    const res = await dealer_ready.exec();
 
     return res?.every(([err]) => err === null) ?? false;
   }
@@ -119,5 +133,9 @@ export class UserManager {
   public async user_deals(user_id: number): Promise<number[]> {
     if (!(await this.has_user(user_id))) return [];
     return (await this.db_api.smembers(this.user_path(`deals:${user_id}`))).map(Number);
+  }
+
+  public async dealer_readys(): Promise<number[]> {
+    return (await this.db_api.smembers(this.user_path("dealer:is_ready"))).map(Number);
   }
 }
