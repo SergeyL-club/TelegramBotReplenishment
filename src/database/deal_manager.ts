@@ -8,13 +8,10 @@ import type { Redis } from "ioredis";
   deal:sum deal_id:sum
   
   deal:time:create start_time
-  deal:time:close start_time
+  deal:time:close close_time
 
   deal:is:client:users deal_id:user_id
-  deal:is:client:deals user_id:deal_id
-
   deal:is:dealer:users deal_id:user_id
-  deal:dealer:is:deals user_id:deal_id
   */
 export enum Status {
   OPEN = "open",
@@ -47,8 +44,7 @@ export class DealManager {
     create_deal.hset(this.deal_path("status"), deal_id.toString(), status);
     create_deal.hset(this.deal_path("method"), deal_id.toString(), method_name);
     create_deal.hset(this.deal_path("sum"), deal_id.toString(), sum.toString());
-    create_deal.hset(this.deal_path("client:users"), deal_id.toString(), user_id.toString());
-    create_deal.hset(this.deal_path("client:deals"), user_id.toString(), deal_id.toString());
+    create_deal.hset(this.deal_path("is:client:users"), deal_id.toString(), user_id.toString());
     create_deal.hset(this.deal_path("time:create"), deal_id.toString(), time.toString());
 
     const res = await create_deal.exec();
