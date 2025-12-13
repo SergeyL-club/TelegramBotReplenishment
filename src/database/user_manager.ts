@@ -3,6 +3,7 @@ import type { Redis } from "ioredis";
 /* 
   Struct user
   user:names user_id:name
+  user:chats user_id:chat_id
   user:roles:user_id:set set role_names
   user:roles:user_id:list list role_names
   user:ids set ids
@@ -24,11 +25,12 @@ export class UserManager {
     return (await this.db_api.sismember(this.user_path("ids"), id.toString())) > 0;
   }
 
-  public async create_user(id: number, name: string): Promise<boolean> {
+  public async create_user(id: number, name: string, chat_id: number): Promise<boolean> {
     if (await this.has_user(id)) return false;
 
     const create_user = this.db_api.multi();
     create_user.hset(this.user_path("names"), id.toString(), name);
+    create_user.hset(this.user_path("chats"), id.toString(), chat_id);
     create_user.sadd(this.user_path("ids"), id.toString());
 
     const res = await create_user.exec();
@@ -41,6 +43,7 @@ export class UserManager {
 
     const remove_user = this.db_api.multi();
     remove_user.hdel(this.user_path("names"), id.toString());
+    remove_user.hdel(this.user_path("chats"), id.toString());
     remove_user.del(this.user_path(`roles:${id}:set`));
     remove_user.del(this.user_path(`roles:${id}:list`));
     remove_user.srem(this.user_path("ids"), id.toString());
@@ -94,5 +97,10 @@ export class UserManager {
     const ids = await this.user_ids();
     const names = await Promise.all(ids.map((id) => this.from_user_id_to_name(id)));
     return names.filter((n): n is string => n !== null);
+  }
+
+  public async user_chat(id: number): Promise<string | null> {
+    if (!(await this.has_user(id))) return null
+    return await this.db_api.hget(this.user_path("chats"), id.toString());
   }
 }
