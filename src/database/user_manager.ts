@@ -106,6 +106,11 @@ export class UserManager {
     return (await this.db_api.sismember(this.user_path(`roles:${user_id}:set`), role_name)) > 0;
   }
 
+  public async dealer_has_ready(user_id: number): Promise<boolean> {
+    if (!(await this.has_user(user_id)) || !(await this.user_has_role(Roles.DEALER, user_id))) return false;
+    return (await this.db_api.sismember(this.user_path("dealer:is_ready"), user_id.toString())) > 0;
+  }
+
   public async user_priority_roles(user_id: number): Promise<string[]> {
     if (!(await this.has_user(user_id)) || (await this.db_api.keys(this.user_path(`roles:${user_id}:list`))).length < 1) return [];
     return await this.db_api.lrange(this.user_path(`roles:${user_id}:list`), 0, -1);
