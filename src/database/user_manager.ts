@@ -7,6 +7,8 @@ import type { Redis } from "ioredis";
   user:roles:user_id:set set role_names
   user:roles:user_id:list list role_names
   user:ids set ids
+
+  user:deals:user_id set deal_ids
 */
 export class UserManager {
   private db_api: Redis;
@@ -53,6 +55,16 @@ export class UserManager {
     return res?.every(([err]) => err === null) ?? false;
   }
 
+  public async add_deal_to_user(deal_id: number, user_id: number): Promise<boolean> {
+    if (!(await this.has_user(user_id))) return false;
+    const assing_deal = this.db_api.multi();
+    assing_deal.sadd(this.user_path(`deals:${user_id}`), deal_id);
+
+    const res = await assing_deal.exec();
+
+    return res?.every(([err]) => err === null) ?? false;
+  }
+
   public async add_role_to_user(role_name: string, user_id: number): Promise<boolean> {
     if (!(await this.has_user(user_id))) return false;
     const assing_role = this.db_api.multi();
@@ -85,8 +97,8 @@ export class UserManager {
     return await this.db_api.lrange(this.user_path(`roles:${user_id}:list`), 0, -1);
   }
 
-  public async from_user_id_to_name(id: number): Promise<string | null> {
-    return await this.db_api.hget(this.user_path("names"), id.toString());
+  public async from_user_id_to_name(user_id: number): Promise<string | null> {
+    return await this.db_api.hget(this.user_path("names"), user_id.toString());
   }
 
   public async user_ids(): Promise<number[]> {
@@ -99,8 +111,13 @@ export class UserManager {
     return names.filter((n): n is string => n !== null);
   }
 
-  public async user_chat(id: number): Promise<string | null> {
-    if (!(await this.has_user(id))) return null
-    return await this.db_api.hget(this.user_path("chats"), id.toString());
+  public async user_chat(user_id: number): Promise<string | null> {
+    if (!(await this.has_user(user_id))) return null;
+    return await this.db_api.hget(this.user_path("chats"), user_id.toString());
+  }
+
+  public async user_deals(user_id: number): Promise<number[]> {
+    if (!(await this.has_user(user_id))) return [];
+    return (await this.db_api.smembers(this.user_path(`deals:${user_id}`))).map(Number);
   }
 }
