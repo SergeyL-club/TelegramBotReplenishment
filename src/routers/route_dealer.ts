@@ -91,5 +91,5 @@ export async function use_dealer(
     );
   });
 
-  await default_logger.info("Registration finally route use_deal");
+  await default_logger.info("Registration finally route use_dealer");
 }
