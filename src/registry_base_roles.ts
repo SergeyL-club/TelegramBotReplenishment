@@ -26,6 +26,8 @@ export const commands: CommandData[] = [
 
 export const menus: MenuData[] = [
   [Roles.ADMIN, "Список методов оплаты", "Отдает список методов оплаты и 2 функции по добавлени и удалению методов", [0, 0]],
+  [Roles.CLIENT, "Баланс", "Дает общие данные об сделках а также отдает функции пополнения", [0, 0]],
+  [Roles.DEALER, "Режим сделок", "Показывает какой сейчас режим сделок (вкл/выкл) а также отдает функции вкл/выкл режима", [0, 0]],
 ] as const;
 
 export async function registry_roles(role_manager: RoleManager, command_manager: CommandManager, menu_manager: MenuManager): Promise<void> {
