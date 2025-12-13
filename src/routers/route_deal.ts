@@ -53,7 +53,7 @@ export async function use_deal(
     if (!ctx.message || !("text" in ctx.message) || !ctx.from) return;
     const user_id = ctx.from.id;
     const sum = ctx.message.text;
-    if (!(/[0-9]+$/.test(sum))) {
+    if (!/[0-9]+$/.test(sum)) {
       await ctx.reply(`Некорректная сумма (${sum})`, { reply_markup: await update_menu(user_id, menu_manager, user_manager) });
       return;
     }
@@ -76,7 +76,9 @@ export async function use_deal(
         });
       })
     );
-    console.log(dealers.length);
+    default_logger.info(`Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `, {
+      dealers,
+    });
   }
 
   telegram_controller.on_callback(deal_method_callback, async (ctx) => {
