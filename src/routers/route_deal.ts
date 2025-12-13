@@ -76,7 +76,7 @@ export async function use_deal(
         });
       })
     );
-    default_logger.info(`Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `, {
+    await default_logger.info(`Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `, {
       dealers,
     });
   }
