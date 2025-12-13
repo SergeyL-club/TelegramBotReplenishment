@@ -3,8 +3,8 @@ import type { RoleManager } from "../database/role_manager";
 import type { CommandManager } from "../database/command_manager";
 import type { UserManager } from "../database/user_manager";
 import type { DataCommand } from "./utils";
-import { commands } from "../registry_base_roles";
 import type { MenuManager } from "../database/menu_manager";
+import { commands } from "../registry_base_roles";
 import { default_logger } from "../core/logger";
 import { get_commands_menu, is_verify_command, update_menu } from "./utils";
 
