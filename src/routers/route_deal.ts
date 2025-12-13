@@ -83,7 +83,7 @@ export async function use_deal(
     await ctx.answerCbQuery();
     if (ctx.from === undefined || ctx.chat === undefined || ctx.callbackQuery === undefined || !("data" in ctx.callbackQuery)) return;
 
-    const [_, method_name] = ctx.callbackQuery.data.split(":");
+    const method_name = ctx.callbackQuery.data.split(":")[1];
     if (method_name === undefined) return;
 
     const is = await ctx.reply(`Вы выбрали метод ${method_name}, ответьте на это сообщение суммой пополнения:`, {
