@@ -17,7 +17,7 @@ export async function use_dealer(
   command_manager: CommandManager,
   user_manager: UserManager,
   menu_manager: MenuManager
-) {
+): Promise<void> {
   const is_verify_menu_dealer = is_verify_command.bind(null, menu_manager, command_manager, user_manager, true);
 
   telegram_controller.on_message(
