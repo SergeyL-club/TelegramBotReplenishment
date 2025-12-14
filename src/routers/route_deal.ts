@@ -37,7 +37,7 @@ export async function use_deal(
 
       const deals = await user_manager.user_deals(user_id);
       const colse_deals = (await Promise.all(deals.map(async (el) => await deal_manager.deal_status(el)))).filter(
-        (el) => el != null && el === Status.CLOSE
+        (el) => el != null && el === Status.CLOSE as string
       );
 
       await ctx.reply(
@@ -215,26 +215,26 @@ export async function use_deal(
     const deal_id = Number(data[1]);
     const message_id_client = Number(data[2]);
     const message_id_dealer = Number(data[3]);
-    default_logger.log("Data: ", { message_id_client, message_id_dealer });
+    await default_logger.log("Data: ", { message_id_client, message_id_dealer });
 
     const is = await deal_manager.close_deal(deal_id);
     if (!is) return;
 
     const dealer_id = await deal_manager.deal_dealer(deal_id);
-    default_logger.log("Data: ", { dealer_id });
+    await default_logger.log("Data: ", { dealer_id });
     if (!dealer_id) return;
     const dealer_chat_id = await user_manager.user_chat(dealer_id);
-    default_logger.log("Data: ", { dealer_chat_id });
+    await default_logger.log("Data: ", { dealer_chat_id });
     if (!dealer_chat_id) return;
     await ctx.telegram.sendMessage(dealer_chat_id, `Сделка под номером ${deal_id} была отменена клиентом`, {
       reply_parameters: { message_id: message_id_dealer },
     });
 
     const client_id = await deal_manager.deal_client(deal_id);
-    default_logger.log("Data: ", { client_id });
+    await default_logger.log("Data: ", { client_id });
     if (!client_id) return;
     const client_chat_id = await user_manager.user_chat(client_id);
-    default_logger.log("Data: ", { client_chat_id });
+    await default_logger.log("Data: ", { client_chat_id });
     if (!client_chat_id) return;
     await timeout_deal_manager.delete_timeout_access_client(message_id_client, client_chat_id);
     await ctx.telegram.sendMessage(client_chat_id, `Вы отменили сделку под номером ${deal_id}`, {

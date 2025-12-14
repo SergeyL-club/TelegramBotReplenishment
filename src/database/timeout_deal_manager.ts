@@ -89,7 +89,7 @@ export class TimeoutDealManager {
     return res?.every(([err]) => err === null) ?? false;
   }
 
-  public async create_timeout_access_client(time: number, deal_id: number, message_id: number, chat_id: number) {
+  public async create_timeout_access_client(time: number, deal_id: number, message_id: number, chat_id: number): Promise<boolean> {
     const create_timeout = this.db_api.multi();
     create_timeout.lpush(this.timeout_path("access:client"), JSON.stringify([time, deal_id, message_id, chat_id]));
 
