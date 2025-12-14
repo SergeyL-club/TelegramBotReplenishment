@@ -88,12 +88,13 @@ export async function use_deal(
         });
       })
     );
+    if (!ctx.chat || !ctx.from || !ctx.from.username) return;
     await timeout_deal_manager.create_timeout_pre_open(
       Date.now() + 1 * 60 * 1000,
       is.message_id,
-      ctx.chat!.id,
-      ctx.from!.id,
-      ctx.from!.username!
+      ctx.chat.id,
+      ctx.from.id,
+      ctx.from.username
     );
     await default_logger.info(
       `Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `,
@@ -125,21 +126,23 @@ export async function use_deal(
 
   telegram_controller.on_callback(deal_open_access, async (ctx) => {
     await ctx.answerCbQuery();
-    if (ctx.from === undefined || ctx.chat === undefined || ctx.callbackQuery === undefined || !("data" in ctx.callbackQuery)) return;
+    if (ctx.from === undefined || ctx.chat === undefined || ctx.callbackQuery === undefined || !("data" in ctx.callbackQuery) || !ctx.from)
+      return;
 
-    const [action, user_id_str, method_name, sum_str, message_id_str] = ctx.callbackQuery.data.split(":");
-    const user_id = Number(user_id_str);
-    const sum = Number(sum_str);
-    const message_id = Number(message_id_str);
+    const data = ctx.callbackQuery.data.split(":");
+    const user_id = Number(data[1]);
+    const method_name = data[2] ?? "";
+    const sum = Number(data[3]);
+    const message_id = Number(data[4]);
 
-    const [is, deal_id] = await deal_manager.create_deal(user_id, ctx.from!.id, method_name!, sum);
+    const [is, deal_id] = await deal_manager.create_deal(user_id, ctx.from.id, method_name, sum);
     if (!is) {
-      await ctx.reply("Не удалось создать сделку", { reply_markup: await update_menu(ctx.from!.id, menu_manager, user_manager) });
+      await ctx.reply("Не удалось создать сделку", { reply_markup: await update_menu(ctx.from.id, menu_manager, user_manager) });
       return;
     }
 
     await ctx.reply(`Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum})`, {
-      reply_markup: await update_menu(ctx.from!.id, menu_manager, user_manager),
+      reply_markup: await update_menu(ctx.from.id, menu_manager, user_manager),
     });
 
     const chat_id = await user_manager.user_chat(user_id);
@@ -150,7 +153,7 @@ export async function use_deal(
     });
 
     const is_rem = await timeout_deal_manager.delete_timeout_pre_open(message_id, chat_id, user_id);
-    default_logger.log(`Удаление таймера запроса (${user_id}, ${method_name}, ${sum}, ${message_id}, ${chat_id}): ${is_rem}`);
+    await default_logger.log(`Удаление таймера запроса (${user_id}, ${method_name}, ${sum}, ${message_id}, ${chat_id}): ${is_rem}`);
   });
 
   await default_logger.info("Registration finally route use_deal");
