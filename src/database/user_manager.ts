@@ -15,7 +15,7 @@ export class UserManager {
     this.user_ids = `${db_name}:users:ids`;
     this.user_nicknames = `${db_name}:users:nicknames`;
     this.user_chats = `${db_name}:users:chats`;
-    this.user_roles = (user_id) => `${db_name}:users:roles:${user_id}`;
+    this.user_roles = (user_id): string => `${db_name}:users:roles:${user_id}`;
 
     this.user_traders = `${db_name}:users:traders`;
   }
