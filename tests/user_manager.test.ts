@@ -18,7 +18,7 @@ describe("UserManager", () => {
 
     expect(await userManager.has_user(1)).toBe(true);
     expect(await userManager.from_user_id_to_name(1)).toBe("Alice");
-    expect(await userManager.user_chat(1)).toBe("100");
+    expect(await userManager.user_chat(1)).toBe(100);
   });
 
   test("create_user should return false for existing user", async () => {
