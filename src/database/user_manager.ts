@@ -130,9 +130,9 @@ export class UserManager {
     return names.filter((n): n is string => n !== null);
   }
 
-  public async user_chat(user_id: number): Promise<string | null> {
+  public async user_chat(user_id: number): Promise<number | null> {
     if (!(await this.has_user(user_id))) return null;
-    return await this.db_api.hget(this.user_path("chats"), user_id.toString());
+    return Number(await this.db_api.hget(this.user_path("chats"), user_id.toString()));
   }
 
   public async user_deals(user_id: number): Promise<number[]> {
