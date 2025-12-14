@@ -5,7 +5,7 @@ import type { MenuManager } from "../database/menu_manager";
 import type { MethodManager } from "../database/method_manager";
 import type { DataCommand } from "./utils";
 import { default_logger } from "../core/logger";
-import { is_verify_command, update_menu } from "./utils";
+import { is_verify_command, timeout_default_callback, update_menu } from "./utils";
 import { menus } from "../registry_base_roles";
 
 const callbacks: [text: string, callback_data: string][] = [
@@ -80,7 +80,7 @@ export async function use_admin(
     const is = await ctx.reply("Ответьте на это сообщение форматом: name description", {
       reply_markup: { force_reply: true },
     });
-    telegram_controller.once_answers(is.message_id, is.chat.id, add_method_deal, Date.now() + 1 * 60 * 1000);
+    telegram_controller.once_answers(is.message_id, is.chat.id, add_method_deal, timeout_default_callback, Date.now() + 1 * 60 * 1000);
   });
 
   telegram_controller.on_callback(callbacks[1]![1], async (ctx) => {
@@ -88,7 +88,7 @@ export async function use_admin(
     const is = await ctx.reply("Ответьте на это сообщение форматом: name", {
       reply_markup: { force_reply: true },
     });
-    telegram_controller.once_answers(is.message_id, is.chat.id, del_method_deal, Date.now() + 1 * 60 * 1000);
+    telegram_controller.once_answers(is.message_id, is.chat.id, del_method_deal, timeout_default_callback, Date.now() + 1 * 60 * 1000);
   });
 
   await default_logger.info("Registration finally route use_admin");

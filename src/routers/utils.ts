@@ -1,4 +1,4 @@
-import type { Context } from "telegraf";
+import type { Context, Telegraf } from "telegraf";
 import type { CommandManager } from "../database/command_manager";
 import { UserManager } from "../database/user_manager";
 import { MenuManager, Positions } from "../database/menu_manager";
@@ -6,6 +6,10 @@ import { MenuManager, Positions } from "../database/menu_manager";
 type ReturnVerifyCommand = [is_filter: boolean, next: () => unknown[]];
 
 export type DataCommand = [role_name: string, command_name: string];
+
+export async function timeout_default_callback(bot: Telegraf<Context>, chat_id: number, message_id: number): Promise<void> {
+  await bot.telegram.sendMessage(chat_id, "Время ответа истекло", { reply_parameters: { message_id: message_id } });
+}
 
 export async function update_menu(
   user_id: number,

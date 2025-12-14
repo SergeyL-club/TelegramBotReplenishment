@@ -15,6 +15,7 @@ export type CommandHandler = MessageHandler;
 export type StartHandler = (ctx: Context) => void | Promise<void>;
 export type CallbackHandler = StartHandler;
 export type AnswerHandler = StartHandler;
+export type TimeoutHandler = (bot: Telegraf<Context>, chat_id: number, message_id: number) => void | Promise<void>;
 
 export class TelegramController {
   private bot: Telegraf<Context>;
@@ -24,7 +25,7 @@ export class TelegramController {
   private messages: [filter: MessageFilterFunction, callback: MessageHandler][];
   private starts: StartHandler[];
   private callbacks: [name: string, callback: CallbackHandler][];
-  private answers: [message_id: number, chat_id: number, callback: AnswerHandler, time: number][];
+  private answers: [message_id: number, chat_id: number, callback: AnswerHandler, time: number, timeout_callback: TimeoutHandler][];
 
   public constructor(
     bot_token: string,
@@ -53,7 +54,7 @@ export class TelegramController {
     try {
       for (let i = 0; i < this.answers.length; i++) {
         const [mid, cid] = this.answers[i]!;
-  
+
         if (cid === chat_id && mid === message_id) {
           this.answers.splice(i, 1); // удалить
           return;
@@ -114,7 +115,8 @@ export class TelegramController {
     for (const answer of this.answers) {
       if (answer[3] < now) {
         await this.delete_answer_handler(answer[0], answer[1]);
-        await this.bot.telegram.sendMessage(answer[1], "Время ответа истекло", { reply_parameters: { message_id: answer[0] } });
+        await answer[4](this.bot, answer[1], answer[0]);
+        // await this.bot.telegram.sendMessage(answer[1], "Время ответа истекло", { reply_parameters: { message_id: answer[0] } });
       }
     }
   }
@@ -151,7 +153,13 @@ export class TelegramController {
     this.callbacks.push([name, callback]);
   }
 
-  public once_answers(message_id: number, chat_id: number, callback: AnswerHandler, time: number = Date.now() + 10 * 1000): void {
-    this.answers.push([message_id, chat_id, callback, time]);
+  public once_answers(
+    message_id: number,
+    chat_id: number,
+    callback: AnswerHandler,
+    timeout_callback: TimeoutHandler,
+    time: number = Date.now() + 10 * 1000
+  ): void {
+    this.answers.push([message_id, chat_id, callback, time, timeout_callback]);
   }
 }

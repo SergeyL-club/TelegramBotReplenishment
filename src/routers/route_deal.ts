@@ -1,7 +1,7 @@
 import type { TelegramController, MessageFilterFunction, Context } from "../core/telegram_controller";
 import type { CommandManager } from "../database/command_manager";
 import type { UserManager } from "../database/user_manager";
-import { is_verify_command, update_menu, type DataCommand } from "./utils";
+import { is_verify_command, timeout_default_callback, update_menu, type DataCommand } from "./utils";
 import type { MenuManager } from "../database/menu_manager";
 import type { MethodManager } from "../database/method_manager";
 import { menus } from "../registry_base_roles";
@@ -92,7 +92,7 @@ export async function use_deal(
       reply_markup: { force_reply: true },
     });
 
-    telegram_controller.once_answers(is.message_id, is.chat.id, open_deal.bind(null, method_name), Date.now() + 1 * 60 * 1000);
+    telegram_controller.once_answers(is.message_id, is.chat.id, open_deal.bind(null, method_name), timeout_default_callback, Date.now() + 1 * 60 * 1000);
   });
 
   await default_logger.info("Registration finally route use_deal");
