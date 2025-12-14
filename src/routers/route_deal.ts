@@ -30,7 +30,7 @@ export async function use_deal(
 
       const deals = await user_manager.user_deals(user_id);
 
-      await ctx.reply(`*Общие сведения об балансе*\nКоличество сделок: ${deals.length}`, {
+      await ctx.reply(`*Общие сведения об аккаунте*\nКоличество сделок: ${deals.length}`, {
         reply_markup: {
           inline_keyboard: [[{ text: balance_callbacks[0]![0], callback_data: balance_callbacks[0]![1] }]],
         },
