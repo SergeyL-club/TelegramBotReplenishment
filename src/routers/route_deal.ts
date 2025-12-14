@@ -3,7 +3,7 @@ import type { CommandManager } from "../database/command_manager";
 import type { UserManager } from "../database/user_manager";
 import type { MenuManager } from "../database/menu_manager";
 import type { MethodManager } from "../database/method_manager";
-import type { DealManager } from "../database/deal_manager";
+import { Status, type DealManager } from "../database/deal_manager";
 import type { TimeoutDealManager } from "../database/timeout_deal_manager";
 import type { DataCommand } from "./utils";
 import { is_verify_command, timeout_default_callback, update_menu } from "./utils";
@@ -34,13 +34,19 @@ export async function use_deal(
       const user_id = ctx.from.id;
 
       const deals = await user_manager.user_deals(user_id);
+      const colse_deals = (await Promise.all(deals.map(async (el) => await deal_manager.deal_status(el)))).filter(
+        (el) => el != null && el === Status.CLOSE
+      );
 
-      await ctx.reply(`*Общие сведения об аккаунте*\nКоличество сделок: ${deals.length}`, {
-        reply_markup: {
-          inline_keyboard: [[{ text: balance_callbacks[0]![0], callback_data: balance_callbacks[0]![1] }]],
-        },
-        parse_mode: "MarkdownV2",
-      });
+      await ctx.reply(
+        `*Общие сведения об аккаунте*\nКоличество сделок: ${deals.length}\nКоличество закрытых сделок: ${colse_deals.length}`,
+        {
+          reply_markup: {
+            inline_keyboard: [[{ text: balance_callbacks[0]![0], callback_data: balance_callbacks[0]![1] }]],
+          },
+          parse_mode: "MarkdownV2",
+        }
+      );
     }
   );
 
@@ -138,14 +144,17 @@ export async function use_deal(
     await deal_manager.add_details_deal(deal_id, details);
     await user_manager.add_deal_to_user(deal_id, user_id);
 
-    await ctx.reply(`Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum}), реквизиты: ${details}`, {
-      reply_markup: await update_menu(dealer_id, menu_manager, user_manager),
-      reply_parameters: { message_id: ctx.message.message_id },
-    });
+    const is_deal_answer = await ctx.reply(
+      `Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum}), реквизиты: ${details}`,
+      {
+        reply_markup: await update_menu(dealer_id, menu_manager, user_manager),
+        reply_parameters: { message_id: ctx.message.message_id },
+      }
+    );
 
     const chat_id = await user_manager.user_chat(user_id);
     if (!chat_id) return;
-    await timeout_deal_manager.create_timeout_access_client(Date.now() + 1 * 60 * 1000, deal_id, message_id, chat_id);
+    await timeout_deal_manager.create_timeout_access_client(Date.now() + 1 * 60 * 1000, deal_id, is_deal_answer.message_id, chat_id);
 
     await ctx.telegram.sendMessage(
       chat_id,

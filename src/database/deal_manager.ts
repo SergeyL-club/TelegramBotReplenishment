@@ -83,6 +83,11 @@ export class DealManager {
     return res?.every(([err]) => err === null) ?? false;
   }
 
+  public async deal_status(deal_id: number): Promise<string | null> {
+    if (!(await this.has_deal(deal_id))) return null;
+    return (await this.db_api.hget(this.deal_path("status"), deal_id.toString()));
+  }
+
   private async has_deal(deal_id: number): Promise<boolean> {
     return (await this.db_api.sismember(this.deal_path("ids"), deal_id.toString())) > 0;
   }
