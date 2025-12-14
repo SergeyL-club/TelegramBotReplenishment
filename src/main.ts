@@ -11,6 +11,7 @@ import { CommandManager } from "./database/command_manager";
 import { UserManager } from "./database/user_manager";
 import { MenuManager } from "./database/menu_manager";
 import { MethodManager } from "./database/method_manager";
+import { DealManager } from "./database/deal_manager";
 import { TimeoutDealManager } from "./database/timeout_deal_manager";
 
 // registry roles, commands
@@ -32,6 +33,7 @@ const command_manager = new CommandManager(redis_database);
 const user_manager = new UserManager(redis_database);
 const menu_manager = new MenuManager(redis_database);
 const method_manager = new MethodManager(redis_database);
+const deal_manager = new DealManager(redis_database);
 const timeout_deal_manager = new TimeoutDealManager(redis_database, telegram_controller.get_bot());
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
@@ -104,7 +106,7 @@ async function main(): Promise<void> {
   // routers
   await use_start(telegram_controller, command_manager, user_manager, menu_manager);
   await use_admin(telegram_controller, command_manager, user_manager, menu_manager, method_manager);
-  await use_deal(telegram_controller, command_manager, user_manager, menu_manager, method_manager, timeout_deal_manager);
+  await use_deal(telegram_controller, command_manager, user_manager, menu_manager, method_manager, deal_manager, timeout_deal_manager);
   await use_dealer(telegram_controller, command_manager, user_manager, menu_manager);
   await use_client(telegram_controller, role_manager, command_manager, user_manager, menu_manager);
 

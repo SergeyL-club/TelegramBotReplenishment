@@ -45,6 +45,20 @@ export class TimeoutDealManager {
     return (await this.db_api.lrange(this.timeout_path("pre_opens"), 0, -1)).map((el) => JSON.parse(el) as PreOpenParams);
   }
 
+  public async delete_timeout_pre_open(message_id: number, chat_id: number, user_id: number): Promise<boolean> {
+    const create_timeout = this.db_api.multi();
+    const timeout_pre_opens = await this.pre_opens();
+    for (const pre_open of timeout_pre_opens) {
+      if (pre_open[1] === message_id && pre_open[2] === chat_id && pre_open[3] == user_id ) {
+        create_timeout.lrem(this.timeout_path("pre_opens"), 1, JSON.stringify(pre_open));
+      }
+    }
+
+    const res = await create_timeout.exec();
+
+    return res?.every(([err]) => err === null) ?? false;
+  }
+
   public async create_timeout_pre_open(
     time: number,
     message_id: number,

@@ -35,7 +35,7 @@ export class DealManager {
     return await this.db_api.incr(this.deal_path("last_id"));
   }
 
-  public async create_deal(user_id: number, method_name: string, sum: number, time = Date.now()): Promise<boolean> {
+  public async create_deal(user_id: number, dealer_id: number, method_name: string, sum: number, time = Date.now()): Promise<[is: boolean, deal_id: number]> {
     const deal_id = await this.get_id();
     const status = Status.OPEN;
 
@@ -45,11 +45,12 @@ export class DealManager {
     create_deal.hset(this.deal_path("method"), deal_id.toString(), method_name);
     create_deal.hset(this.deal_path("sum"), deal_id.toString(), sum.toString());
     create_deal.hset(this.deal_path("is:client:users"), deal_id.toString(), user_id.toString());
+    create_deal.hset(this.deal_path("is:dealer:users"), deal_id.toString(), dealer_id.toString());
     create_deal.hset(this.deal_path("time:create"), deal_id.toString(), time.toString());
 
     const res = await create_deal.exec();
 
-    return res?.every(([err]) => err === null) ?? false;
+    return [res?.every(([err]) => err === null) ?? false, deal_id];
   }
 
   public async close_deal(deal_id: number, time = Date.now()): Promise<boolean> {
