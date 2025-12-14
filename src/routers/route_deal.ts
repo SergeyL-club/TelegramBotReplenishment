@@ -13,6 +13,8 @@ import { default_logger } from "../core/logger";
 export const balance_callbacks: [text: string, callback_data: string][] = [["Пополнить баланс", "balance_open_deal"]] as const;
 export const deal_method_callback = "open_deal_method";
 export const deal_open_access = "open_deal_access";
+export const deal_access_client = "deal_access_client";
+export const deal_close_client = "deal_close_client";
 
 export async function use_deal(
   telegram_controller: TelegramController,
@@ -147,22 +149,36 @@ export async function use_deal(
     const is_deal_answer = await ctx.reply(
       `Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum}), реквизиты: ${details}`,
       {
-        reply_markup: await update_menu(dealer_id, menu_manager, user_manager),
         reply_parameters: { message_id: ctx.message.message_id },
       }
     );
 
     const chat_id = await user_manager.user_chat(user_id);
     if (!chat_id) return;
-    await timeout_deal_manager.create_timeout_access_client(Date.now() + 1 * 60 * 1000, deal_id, is_deal_answer.message_id, chat_id);
-
-    await ctx.telegram.sendMessage(
+    
+    const is_deal_client = await ctx.telegram.sendMessage(
       chat_id,
       `Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum}), реквизиты: ${details}`,
       {
         reply_parameters: { message_id },
       }
     );
+    await timeout_deal_manager.create_timeout_access_client(Date.now() + 1 * 60 * 1000, deal_id, is_deal_client.message_id, chat_id);
+    
+    await ctx.telegram.sendMessage(chat_id, "Выберите действие:", {
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: "Подтвердить", callback_data: `${deal_access_client}` },
+            {
+              text: "Отменить",
+              callback_data: `${deal_close_client}:${deal_id}:${is_deal_client.message_id}:${is_deal_answer.message_id}`,
+            },
+          ],
+        ],
+      },
+      reply_parameters: { message_id: is_deal_client.message_id },
+    });
 
     const is_rem = await timeout_deal_manager.delete_timeout_pre_open(message_id, chat_id);
     await default_logger.log(`Удаление таймера запроса (${user_id}, ${method_name}, ${sum}, ${message_id}, ${chat_id}): ${is_rem}`);
@@ -189,6 +205,42 @@ export async function use_deal(
       timeout_default_callback.bind(null, ctx.from.id, menu_manager, user_manager),
       Date.now() + 1 * 60 * 1000
     );
+  });
+
+  telegram_controller.on_callback(deal_close_client, async (ctx) => {
+    await ctx.answerCbQuery();
+    if (ctx.from === undefined || ctx.chat === undefined || ctx.callbackQuery === undefined || !("data" in ctx.callbackQuery) || !ctx.from)
+      return;
+    const data = ctx.callbackQuery.data.split(":");
+    const deal_id = Number(data[1]);
+    const message_id_client = Number(data[2]);
+    const message_id_dealer = Number(data[3]);
+    default_logger.log("Data: ", { message_id_client, message_id_dealer });
+
+    const is = await deal_manager.close_deal(deal_id);
+    if (!is) return;
+
+    const dealer_id = await deal_manager.deal_dealer(deal_id);
+    default_logger.log("Data: ", { dealer_id });
+    if (!dealer_id) return;
+    const dealer_chat_id = await user_manager.user_chat(dealer_id);
+    default_logger.log("Data: ", { dealer_chat_id });
+    if (!dealer_chat_id) return;
+    await ctx.telegram.sendMessage(dealer_chat_id, `Сделка под номером ${deal_id} была отменена клиентом`, {
+      reply_parameters: { message_id: message_id_dealer },
+    });
+
+    const client_id = await deal_manager.deal_client(deal_id);
+    default_logger.log("Data: ", { client_id });
+    if (!client_id) return;
+    const client_chat_id = await user_manager.user_chat(client_id);
+    default_logger.log("Data: ", { client_chat_id });
+    if (!client_chat_id) return;
+    await timeout_deal_manager.delete_timeout_access_client(message_id_client, client_chat_id);
+    await ctx.telegram.sendMessage(client_chat_id, `Вы отменили сделку под номером ${deal_id}`, {
+      reply_parameters: { message_id: message_id_client },
+    });
+    await default_logger.info(`Сделка под номера ${deal_id} была отменена клиентом`);
   });
 
   await default_logger.info("Registration finally route use_deal");

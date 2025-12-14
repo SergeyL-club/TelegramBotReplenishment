@@ -83,6 +83,16 @@ export class DealManager {
     return res?.every(([err]) => err === null) ?? false;
   }
 
+  public async deal_dealer(deal_id: number): Promise<number | null> {
+    if (!(await this.has_deal(deal_id))) return null;
+    return Number(await this.db_api.hget(this.deal_path("is:dealer:users"), deal_id.toString()));
+  }
+
+  public async deal_client(deal_id: number): Promise<number | null> {
+    if (!(await this.has_deal(deal_id))) return null;
+    return Number(await this.db_api.hget(this.deal_path("is:client:users"), deal_id.toString()));
+  }
+
   public async deal_status(deal_id: number): Promise<string | null> {
     if (!(await this.has_deal(deal_id))) return null;
     return (await this.db_api.hget(this.deal_path("status"), deal_id.toString()));
