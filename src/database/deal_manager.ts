@@ -24,7 +24,7 @@ export interface DealData {
   };
 }
 
-export class UserManager {
+export class DealManager {
   public constructor(
     private db_api: Redis,
     db_name = "tg_trader"
