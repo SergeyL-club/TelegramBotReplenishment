@@ -141,6 +141,8 @@ export async function use_deal(
       return;
     }
 
+    await user_manager.add_deal_to_user(deal_id, user_id);
+
     await ctx.reply(`Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum})`, {
       reply_markup: await update_menu(ctx.from.id, menu_manager, user_manager),
     });
