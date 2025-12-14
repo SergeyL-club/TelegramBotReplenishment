@@ -76,9 +76,12 @@ export async function use_deal(
         });
       })
     );
-    await default_logger.info(`Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `, {
-      dealers,
-    });
+    await default_logger.info(
+      `Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `,
+      {
+        dealers,
+      }
+    );
   }
 
   telegram_controller.on_callback(deal_method_callback, async (ctx) => {
@@ -92,7 +95,13 @@ export async function use_deal(
       reply_markup: { force_reply: true },
     });
 
-    telegram_controller.once_answers(is.message_id, is.chat.id, open_deal.bind(null, method_name), timeout_default_callback, Date.now() + 1 * 60 * 1000);
+    telegram_controller.once_answers(
+      is.message_id,
+      is.chat.id,
+      open_deal.bind(null, method_name),
+      timeout_default_callback.bind(null, ctx.from.id, menu_manager, user_manager),
+      Date.now() + 1 * 60 * 1000
+    );
   });
 
   await default_logger.info("Registration finally route use_deal");

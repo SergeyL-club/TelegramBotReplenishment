@@ -7,8 +7,17 @@ type ReturnVerifyCommand = [is_filter: boolean, next: () => unknown[]];
 
 export type DataCommand = [role_name: string, command_name: string];
 
-export async function timeout_default_callback(bot: Telegraf<Context>, chat_id: number, message_id: number): Promise<void> {
-  await bot.telegram.sendMessage(chat_id, "Время ответа истекло", { reply_parameters: { message_id: message_id } });
+export async function timeout_default_callback(
+  user_id: number,
+  menu_manager: MenuManager,
+  user_manager: UserManager,
+  bot: Telegraf<Context>,
+  chat_id: number,
+  message_id: number
+): Promise<void> {
+  await bot.telegram.sendMessage(chat_id, "Время ответа истекло", {
+    reply_parameters: { message_id: message_id, ...(await update_menu(user_id, menu_manager, user_manager)) },
+  });
 }
 
 export async function update_menu(
