@@ -16,7 +16,8 @@ export async function timeout_default_callback(
   message_id: number
 ): Promise<void> {
   await bot.telegram.sendMessage(chat_id, "Время ответа истекло", {
-    reply_parameters: { message_id: message_id, ...(await update_menu(user_id, menu_manager, user_manager)) },
+    reply_markup: await update_menu(user_id, menu_manager, user_manager),
+    reply_parameters: { message_id: message_id },
   });
 }
 
