@@ -1,9 +1,11 @@
 import type { TelegramController, MessageFilterFunction, Context } from "../core/telegram_controller";
 import type { CommandManager } from "../database/command_manager";
 import type { UserManager } from "../database/user_manager";
-import { is_verify_command, timeout_default_callback, update_menu, type DataCommand } from "./utils";
 import type { MenuManager } from "../database/menu_manager";
 import type { MethodManager } from "../database/method_manager";
+import type { TimeoutDealManager } from "../database/timeout_deal_manager";
+import type { DataCommand } from "./utils";
+import { is_verify_command, timeout_default_callback, update_menu } from "./utils";
 import { menus } from "../registry_base_roles";
 import { default_logger } from "../core/logger";
 
@@ -16,7 +18,8 @@ export async function use_deal(
   command_manager: CommandManager,
   user_manager: UserManager,
   menu_manager: MenuManager,
-  method_manager: MethodManager
+  method_manager: MethodManager,
+  timeout_deal_manager: TimeoutDealManager
 ): Promise<void> {
   const is_verify_menu_client = is_verify_command.bind(null, menu_manager, command_manager, user_manager, true);
 
@@ -65,7 +68,10 @@ export async function use_deal(
       return;
     }
 
-    await ctx.reply("Запрос принят, ожидайте ответа", { reply_markup: await update_menu(user_id, menu_manager, user_manager) });
+    const is = await ctx.reply("Запрос принят, ожидайте ответа", {
+      reply_markup: await update_menu(user_id, menu_manager, user_manager),
+      reply_parameters: { message_id: ctx.message.message_id },
+    });
 
     await Promise.all(
       dealers.map(async (user_id) => {
@@ -75,6 +81,13 @@ export async function use_deal(
           reply_markup: { inline_keyboard: [[{ text: "Принять", callback_data: `${deal_open_access}:${user_id}:${method_name}:${sum}` }]] },
         });
       })
+    );
+    await timeout_deal_manager.create_timeout_pre_open(
+      Date.now() + 1 * 60 * 1000,
+      is.message_id,
+      is.chat.id,
+      is.from!.id,
+      is.from!.username!
     );
     await default_logger.info(
       `Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `,

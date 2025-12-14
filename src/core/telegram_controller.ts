@@ -49,6 +49,10 @@ export class TelegramController {
     this.message_handler.call(this);
   }
 
+  public get_bot(): Telegraf<Context> {
+    return this.bot;
+  }
+
   private async delete_answer_handler(message_id: number, chat_id: number): Promise<void> {
     const unlock = await this.answer_mutex.lock();
     try {
