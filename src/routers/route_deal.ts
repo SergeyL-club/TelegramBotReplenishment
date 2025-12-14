@@ -113,6 +113,7 @@ export async function use_deal(
 
     const is = await ctx.reply(`Вы выбрали метод ${method_name}, ответьте на это сообщение суммой пополнения:`, {
       reply_markup: { force_reply: true },
+      reply_parameters: { message_id: ctx.callbackQuery.message!.message_id },
     });
 
     telegram_controller.once_answers(
@@ -124,38 +125,66 @@ export async function use_deal(
     );
   });
 
+  async function open_deal_access(
+    user_id: number,
+    method_name: string,
+    sum: number,
+    message_id: number,
+    dealer_id: number,
+    ctx: Context
+  ): Promise<void> {
+    if (!ctx.message || !("text" in ctx.message)) return;
+    const details = ctx.message.text;
+    const [is, deal_id] = await deal_manager.create_deal(user_id, dealer_id, method_name, sum);
+    if (!is) {
+      await ctx.reply("Не удалось создать сделку", { reply_markup: await update_menu(dealer_id, menu_manager, user_manager) });
+      return;
+    }
+
+    await deal_manager.add_details_deal(deal_id, details);
+    await user_manager.add_deal_to_user(deal_id, user_id);
+
+    await ctx.reply(`Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum}), реквизиты: ${details}`, {
+      reply_markup: await update_menu(dealer_id, menu_manager, user_manager),
+      reply_parameters: { message_id: ctx.message.message_id },
+    });
+
+    const chat_id = await user_manager.user_chat(user_id);
+    if (!chat_id) return;
+
+    await ctx.telegram.sendMessage(
+      chat_id,
+      `Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum}), реквизиты: ${details}`,
+      {
+        reply_parameters: { message_id },
+      }
+    );
+
+    const is_rem = await timeout_deal_manager.delete_timeout_pre_open(message_id, chat_id, user_id);
+    await default_logger.log(`Удаление таймера запроса (${user_id}, ${method_name}, ${sum}, ${message_id}, ${chat_id}): ${is_rem}`);
+  }
+
   telegram_controller.on_callback(deal_open_access, async (ctx) => {
     await ctx.answerCbQuery();
     if (ctx.from === undefined || ctx.chat === undefined || ctx.callbackQuery === undefined || !("data" in ctx.callbackQuery) || !ctx.from)
       return;
-
     const data = ctx.callbackQuery.data.split(":");
     const user_id = Number(data[1]);
     const method_name = data[2] ?? "";
     const sum = Number(data[3]);
     const message_id = Number(data[4]);
 
-    const [is, deal_id] = await deal_manager.create_deal(user_id, ctx.from.id, method_name, sum);
-    if (!is) {
-      await ctx.reply("Не удалось создать сделку", { reply_markup: await update_menu(ctx.from.id, menu_manager, user_manager) });
-      return;
-    }
-
-    await user_manager.add_deal_to_user(deal_id, user_id);
-
-    await ctx.reply(`Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum})`, {
-      reply_markup: await update_menu(ctx.from.id, menu_manager, user_manager),
+    const is = await ctx.reply("Ответьте на это сообщение реквизитами:", {
+      reply_markup: { force_reply: true },
+      reply_parameters: { message_id: ctx.callbackQuery.message!.message_id },
     });
-
-    const chat_id = await user_manager.user_chat(user_id);
-    if (!chat_id) return;
-
-    await ctx.telegram.sendMessage(chat_id, `Сделка была открыта (номер ${deal_id}, метод ${method_name}, сумма ${sum})`, {
-      reply_parameters: { message_id },
-    });
-
-    const is_rem = await timeout_deal_manager.delete_timeout_pre_open(message_id, chat_id, user_id);
-    await default_logger.log(`Удаление таймера запроса (${user_id}, ${method_name}, ${sum}, ${message_id}, ${chat_id}): ${is_rem}`);
+    telegram_controller.once_answers(
+      is.message_id,
+      is.chat.id,
+      open_deal_access.bind(null, user_id, method_name, sum, message_id, ctx.from.id),
+      timeout_default_callback.bind(null, ctx.from.id, menu_manager, user_manager),
+      Date.now() + 1 * 60 * 1000
+    );
   });
 
   await default_logger.info("Registration finally route use_deal");

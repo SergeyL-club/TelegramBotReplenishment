@@ -6,6 +6,7 @@ import type { Redis } from "ioredis";
   deal:status deal_id:status
   deal:method deal_id:method_name
   deal:sum deal_id:sum
+  deal:details deal_id:details
   
   deal:time:create start_time
   deal:time:close close_time
@@ -35,7 +36,23 @@ export class DealManager {
     return await this.db_api.incr(this.deal_path("last_id"));
   }
 
-  public async create_deal(user_id: number, dealer_id: number, method_name: string, sum: number, time = Date.now()): Promise<[is: boolean, deal_id: number]> {
+  public async add_details_deal(deal_id: number, details: string): Promise<boolean> {
+    if (!(await this.has_deal(deal_id))) return false;
+    const create_deal = this.db_api.multi();
+    create_deal.hset(this.deal_path("details"), deal_id.toString(), details);
+
+    const res = await create_deal.exec();
+
+    return res?.every(([err]) => err === null) ?? false;
+  }
+
+  public async create_deal(
+    user_id: number,
+    dealer_id: number,
+    method_name: string,
+    sum: number,
+    time = Date.now()
+  ): Promise<[is: boolean, deal_id: number]> {
     const deal_id = await this.get_id();
     const status = Status.OPEN;
 
