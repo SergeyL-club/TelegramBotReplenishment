@@ -2,6 +2,8 @@ import type { Telegraf, Context } from "telegraf";
 import type { Redis } from "ioredis";
 import { Timer } from "../core/timer";
 
+export type PreOpenParams = [time: number, message_id: number, chat_id: number, user_id: number, user_nickname: string];
+
 /* 
   Struct timeout
   timeout:pre_opens list [time, message_id, chat_id, user_id, user_nickname]
@@ -39,8 +41,8 @@ export class TimeoutDealManager {
     return `${this.db_name}:timeout:${options}`;
   }
 
-  private async pre_opens(): Promise<[time: number, message_id: number, chat_id: number, user_id: number, user_nickname: string][]> {
-    return (await this.db_api.lrange(this.timeout_path("pre_opens"), 0, -1)).map((el) => JSON.parse(el));
+  private async pre_opens(): Promise<PreOpenParams[]> {
+    return (await this.db_api.lrange(this.timeout_path("pre_opens"), 0, -1)).map((el) => JSON.parse(el) as PreOpenParams);
   }
 
   public async create_timeout_pre_open(
