@@ -89,13 +89,7 @@ export async function use_deal(
       })
     );
     if (!ctx.chat || !ctx.from || !ctx.from.username) return;
-    await timeout_deal_manager.create_timeout_pre_open(
-      Date.now() + 1 * 60 * 1000,
-      is.message_id,
-      ctx.chat.id,
-      ctx.from.id,
-      ctx.from.username
-    );
+    await timeout_deal_manager.create_timeout_pre_open(Date.now() + 1 * 60 * 1000, is.message_id, ctx.chat.id);
     await default_logger.info(
       `Запрос на сделку с суммой ${sum}, методом оплаты ${method_name}. Отправлено dealears (${dealers.length}): `,
       {
@@ -151,6 +145,7 @@ export async function use_deal(
 
     const chat_id = await user_manager.user_chat(user_id);
     if (!chat_id) return;
+    await timeout_deal_manager.create_timeout_access_client(Date.now() + 1 * 60 * 1000, deal_id, message_id, chat_id);
 
     await ctx.telegram.sendMessage(
       chat_id,
@@ -160,7 +155,7 @@ export async function use_deal(
       }
     );
 
-    const is_rem = await timeout_deal_manager.delete_timeout_pre_open(message_id, chat_id, user_id);
+    const is_rem = await timeout_deal_manager.delete_timeout_pre_open(message_id, chat_id);
     await default_logger.log(`Удаление таймера запроса (${user_id}, ${method_name}, ${sum}, ${message_id}, ${chat_id}): ${is_rem}`);
   }
 

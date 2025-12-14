@@ -34,7 +34,7 @@ const user_manager = new UserManager(redis_database);
 const menu_manager = new MenuManager(redis_database);
 const method_manager = new MethodManager(redis_database);
 const deal_manager = new DealManager(redis_database);
-const timeout_deal_manager = new TimeoutDealManager(redis_database, telegram_controller.get_bot());
+const timeout_deal_manager = new TimeoutDealManager(redis_database, telegram_controller.get_bot(), deal_manager);
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegram_controller.reply_timer_stop();
