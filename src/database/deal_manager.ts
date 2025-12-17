@@ -32,7 +32,10 @@ export class DealManager {
     this.deal_ids = `${db_name}:deals:ids`;
     this.deal_states = `${db_name}:deals:states`;
     this.deal_details = `${db_name}:deals:details`;
+    this.deal_method_names = `${db_name}:deals:method:names`;
     this.deal_creation_times = `${db_name}:deals:creation_times`;
+
+    this.method_names = `${db_name}:method:names`;
 
     this.deal_s1_ids = `${db_name}:deals:s1:ids`;
     this.deal_s1_creation_times = `${db_name}:deals:s1:creation_times`;
@@ -55,9 +58,13 @@ export class DealManager {
   private deal_ids;
   private deal_states;
   private deal_details;
+  private deal_method_names;
   private deal_clients;
   private deal_traders;
   private deal_creation_times;
+
+  // methods
+  private method_names;
 
   // step 1
   private deal_s1_ids;
@@ -85,6 +92,11 @@ export class DealManager {
     return (await this.db_api.sismember(this.deal_ids, deal_id.toString())) > 0;
   }
 
+  // Проверка наличия метода оплаты
+  public async verification_by_method_name(method_name: string): Promise<boolean> {
+    return (await this.db_api.sismember(this.method_names, method_name.toString())) > 0;
+  }
+
   // Получения списком сделок
   public async deals_all(): Promise<number[] | null> {
     const data = await this.db_api.smembers(this.deal_ids);
@@ -110,6 +122,9 @@ export class DealManager {
   }
   public async details_by_deal_id(deal_id: number): Promise<string | null> {
     return await this.db_api.hget(this.deal_details, deal_id.toString());
+  }
+  public async method_name_by_deal_id(deal_id: number): Promise<string | null> {
+    return await this.db_api.hget(this.deal_method_names, deal_id.toString());
   }
   public async creation_time_by_deal_id(deal_id: number): Promise<number | null> {
     const data = await this.db_api.hget(this.deal_creation_times, deal_id.toString());
@@ -140,8 +155,33 @@ export class DealManager {
     return data !== null ? Number(data) : null;
   }
 
+  /// Функции метода оплаты
+  public async create_method(method_name: string): Promise<boolean> {
+    if (await this.verification_by_method_name(method_name)) return false;
+    const multi = this.db_api.multi();
+
+    multi.sadd(this.method_names, method_name);
+
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
+  }
+  public async delete_method(method_name: string): Promise<boolean> {
+    if (!(await this.verification_by_method_name(method_name))) return false;
+    const multi = this.db_api.multi();
+
+    multi.srem(this.method_names, method_name);
+
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
+  }
+
   // Функции сделки
-  public async create_deal(client_id: number, trader_id: number, details: string, create_at = Date.now()): Promise<number | false> {
+  public async create_deal(
+    client_id: number,
+    trader_id: number,
+    method_name: string,
+    details: string,
+    create_at = Date.now()
+  ): Promise<number | false> {
+    if (!(await this.verification_by_method_name(method_name))) return false;
     const deal_id = await this.generation_id();
     const multi = this.db_api.multi();
 
@@ -150,9 +190,10 @@ export class DealManager {
     multi.hset(this.deal_traders, deal_id.toString(), trader_id.toString());
     multi.hset(this.deal_states, deal_id.toString(), States.OPEN);
     multi.hset(this.deal_details, deal_id.toString(), details);
+    multi.hset(this.deal_method_names, deal_id.toString(), method_name);
     multi.hset(this.deal_creation_times, deal_id.toString(), create_at.toString());
 
-    return (await multi.exec())?.every((value) => value[0] !== null) ? deal_id : false;
+    return (await multi.exec())?.every((value) => value[0] === null) ? deal_id : false;
   }
   public async close_deal(deal_id: number, close_at = Date.now()): Promise<boolean> {
     if (!(await this.verification_by_deal_id(deal_id))) return false;
@@ -162,7 +203,7 @@ export class DealManager {
     multi.hset(this.deal_states, deal_id.toString(), States.CLOSE);
     multi.hset(this.deal_close_creation_times, deal_id.toString(), close_at.toString());
 
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
   }
   public async step_1(deal_id: number, update_at = Date.now()): Promise<boolean> {
     if (!(await this.verification_by_deal_id(deal_id))) return false;
@@ -172,7 +213,7 @@ export class DealManager {
     multi.hset(this.deal_states, deal_id.toString(), States.STEP_1);
     multi.hset(this.deal_s1_creation_times, deal_id.toString(), update_at.toString());
 
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
   }
   public async step_2(deal_id: number, update_at = Date.now()): Promise<boolean> {
     if (!(await this.verification_by_deal_id(deal_id))) return false;
@@ -182,7 +223,7 @@ export class DealManager {
     multi.hset(this.deal_states, deal_id.toString(), States.STEP_2);
     multi.hset(this.deal_s2_creation_times, deal_id.toString(), update_at.toString());
 
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
   }
   public async finish_deal(deal_id: number, update_at = Date.now()): Promise<boolean> {
     if (!(await this.verification_by_deal_id(deal_id))) return false;
@@ -192,7 +233,7 @@ export class DealManager {
     multi.hset(this.deal_states, deal_id.toString(), States.FINISH);
     multi.hset(this.deal_finish_creation_times, deal_id.toString(), update_at.toString());
 
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
   }
 
   // Весь блок сделки
