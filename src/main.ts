@@ -5,13 +5,17 @@ import Redis from "ioredis";
 import { default_logger } from "./core/logger";
 
 // database
-// import { UserManager } from "./database/user_manager";
+import { UserManager } from "./database/user_manager";
 // import { DealManager } from "./database/deal_manager";
 
 const redis_database = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
-// const user_manager = new UserManager(redis_database);
+const user_manager = new UserManager(redis_database);
 // const deal_manager = new DealManager(redis_database);
 
+// routes
+import { use_start } from "./routes/start.route";
+
+// telegram controller
 import { TelegramController } from "./core/telegram_controller";
 
 const telegram_controller = new TelegramController(process.env.BOT_TOKEN ?? "", redis_database);
@@ -79,6 +83,9 @@ async function main(): Promise<void> {
   // redis connection is ready
   await wait_for_redis_ready(redis_database);
   await default_logger.info("Redis already");
+
+  // use routes
+  await use_start(telegram_controller, user_manager);
 
   // start telegram events
   telegram_controller.start_handler.call(telegram_controller);
