@@ -26,7 +26,7 @@ export async function use_code(telegram_controller: TelegramController, user_man
       if (!("text" in msg)) return;
       const token = msg.text.trim().split(" ")[1];
       const user_id = msg.from!.id;
-      const chat_id = msg.chat!.id;
+      const chat_id = msg.chat.id;
 
       for (const key of Object.keys(tokens)) {
         if (tokens[key] === token) {
@@ -44,6 +44,6 @@ export async function use_code(telegram_controller: TelegramController, user_man
     }
   );
 
-  await default_logger.log(`Active tokens: `, tokens);
+  await default_logger.log("Active tokens: ", tokens);
   await default_logger.info("Registration use_start is finish");
 }
