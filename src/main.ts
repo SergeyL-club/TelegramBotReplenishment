@@ -6,15 +6,19 @@ import { default_logger } from "./core/logger";
 
 // database
 import { UserManager } from "./database/user_manager";
-// import { DealManager } from "./database/deal_manager";
+import { DealManager } from "./database/deal_manager";
 
 const redis_database = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 const user_manager = new UserManager(redis_database);
-// const deal_manager = new DealManager(redis_database);
+const deal_manager = new DealManager(redis_database);
 
 // routes
 import { use_start } from "./routes/start.route";
 import { use_code } from "./routes/code.route";
+import { use_menu } from "./routes/menu.route";
+import { use_method } from "./routes/method.route";
+import { use_method_add } from "./routes/method_add.route";
+import { use_method_del } from "./routes/method_del.route";
 
 // telegram controller
 import { TelegramController } from "./core/telegram_controller";
@@ -88,6 +92,10 @@ async function main(): Promise<void> {
   // use routes
   await use_start(telegram_controller, user_manager);
   await use_code(telegram_controller, user_manager);
+  await use_menu(telegram_controller, user_manager);
+  await use_method(telegram_controller, deal_manager);
+  await use_method_add(telegram_controller, deal_manager);
+  await use_method_del(telegram_controller, deal_manager);
 
   // start telegram events
   telegram_controller.start_handler.call(telegram_controller);
