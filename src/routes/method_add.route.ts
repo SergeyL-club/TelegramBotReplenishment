@@ -7,7 +7,7 @@ export async function use_method_add(telegram_controller: TelegramController, de
     await ctx.answerCbQuery();
     if (cb.message === undefined) return;
     const is = await ctx.reply("Напишите название метода оплаты", { reply_markup: { force_reply: true } });
-    binds.bind(
+    await binds.bind(
       "add_get_method_name",
       is.chat.id,
       is.message_id,
