@@ -14,6 +14,7 @@ const user_manager = new UserManager(redis_database);
 
 // routes
 import { use_start } from "./routes/start.route";
+import { use_code } from "./routes/code.route";
 
 // telegram controller
 import { TelegramController } from "./core/telegram_controller";
@@ -86,6 +87,7 @@ async function main(): Promise<void> {
 
   // use routes
   await use_start(telegram_controller, user_manager);
+  await use_code(telegram_controller, user_manager);
 
   // start telegram events
   telegram_controller.start_handler.call(telegram_controller);
