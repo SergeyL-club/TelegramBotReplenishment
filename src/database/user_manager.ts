@@ -88,20 +88,32 @@ export class UserManager {
     if (await this.verification_by_user_id(user_id)) return true;
     const multi = this.db_api.multi();
 
+    multi.sadd(this.user_ids, user_id.toString());
     multi.hset(this.user_chats, user_id.toString(), chat_id.toString());
     multi.hset(this.user_nicknames, user_id.toString(), nickname);
     if (roles !== undefined && roles.length > 0) multi.sadd(this.user_roles(user_id), roles);
 
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
   }
   public async delete_user(user_id: number): Promise<boolean> {
     if (!(await this.verification_by_user_id(user_id))) return true;
     const multi = this.db_api.multi();
 
+    multi.srem(this.user_ids, user_id.toString());
     multi.hdel(this.user_chats, user_id.toString());
     multi.hdel(this.user_nicknames, user_id.toString());
     multi.del(this.user_roles(user_id));
 
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
+  }
+
+  // Добавление роли
+  public async add_role_user(role_name: string, user_id: number): Promise<boolean> {
+    if (!(await this.verification_by_user_id(user_id))) return false;
+    const multi = this.db_api.multi();
+
+    multi.sadd(this.user_roles(user_id), role_name);
+
+    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
   }
 }
