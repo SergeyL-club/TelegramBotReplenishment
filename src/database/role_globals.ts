@@ -9,11 +9,14 @@ export type RolesKeys = keyof typeof Roles;
 export type MenuButton = { text: string; positions: [row: number, col: number] };
 export type Command = { command: string; description: string };
 
-export const client_commands: Command[] = [{ command: "/code", description: "Активировать роль по токену" }] as const;
+export const client_commands: Command[] = [
+  { command: "/code", description: "Активировать роль по токену" },
+  { command: "/menu", description: "Открыть меню" },
+] as const;
 
 export const client_menu_buttons: MenuButton[] = [{ text: "Тест", positions: [0, 0] }] as const;
 export const trader_menu_buttons: MenuButton[] = [] as const;
-export const admin_menu_buttons: MenuButton[] = [] as const;
+export const admin_menu_buttons: MenuButton[] = [{ text: "Методы Оплаты", positions: [0, 0] }] as const;
 
 export const menu_buttons: (MenuButton & { role: RolesValue })[] = [
   ...client_menu_buttons.map((el) => ({ role: Roles.CLIENT, ...el })),
