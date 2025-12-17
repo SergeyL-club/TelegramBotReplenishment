@@ -4,6 +4,7 @@ export enum Roles {
   ADMIN = "admin",
 }
 export type RolesValue = (typeof Roles)[keyof typeof Roles];
+export type RolesKeys = keyof typeof Roles;
 
 export type MenuButton = { text: string; positions: [row: number, col: number] };
 export type Command = { command: string; description: string };
