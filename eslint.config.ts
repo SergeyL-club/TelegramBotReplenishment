@@ -37,13 +37,15 @@ export default defineConfig([
         {
           selector: "parameter",
           format: ["snake_case"],
+          filter: {
+            regex: "^_+$",
+            match: false,
+          },
         },
         {
           selector: "property",
           modifiers: ["private"],
           format: ["snake_case"],
-          leadingUnderscore: "forbid",
-          trailingUnderscore: "forbid",
         },
       ],
 
@@ -59,7 +61,7 @@ export default defineConfig([
 
       // Разрешаем нормальный TS-стиль
       "@typescript-eslint/no-explicit-any": "off",
-       "@typescript-eslint/no-redundant-type-constituents": "off",
+      "@typescript-eslint/no-redundant-type-constituents": "off",
 
       // functions
       "@typescript-eslint/explicit-member-accessibility": ["error", { accessibility: "explicit" }],
