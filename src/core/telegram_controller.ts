@@ -164,7 +164,6 @@ export class TelegramController {
                 if (params.math !== undefined && !(await params.math(ctx, msg, bind_data))) return;
                 await Promise.all([ctx.deleteMessage(reply_msg.message_id), ctx.deleteMessage(msg.message_id)]);
                 await this.delete_bind(reply_msg.message_id);
-                console.log(1);
                 await callback(ctx, msg, { bind: this.bind.bind(this), data: bind_data });
               })
           );
