@@ -116,6 +116,12 @@ export class DealManager {
     return data.length > 0 ? data.map(Number) : null;
   }
 
+  // Получения списка методов оплаты
+  public async methods_names_all(): Promise<string[] | null> {
+    const data = await this.db_api.smembers(this.method_names);
+    return data.length > 0 ? data : null;
+  }
+
   // Получение данных о сделке
   public async state_by_deal_id(deal_id: number): Promise<StatesValue | null> {
     return (await this.db_api.hget(this.deal_states, deal_id.toString())) as StatesValue | null;
