@@ -19,6 +19,9 @@ import { use_menu } from "./routes/menu.route";
 import { use_method } from "./routes/method.route";
 import { use_method_add } from "./routes/method_add.route";
 import { use_method_del } from "./routes/method_del.route";
+import { use_toggle_trader } from "./routes/trader_toggle.route";
+import { use_toggle_trader_on } from "./routes/trader_toggle_on.route";
+import { use_toggle_trader_off } from "./routes/trader_toggle_off.route";
 
 // telegram controller
 import { TelegramController } from "./core/telegram_controller";
@@ -96,6 +99,9 @@ async function main(): Promise<void> {
   await use_method(telegram_controller, deal_manager);
   await use_method_add(telegram_controller, deal_manager);
   await use_method_del(telegram_controller, deal_manager);
+  await use_toggle_trader(telegram_controller, user_manager);
+  await use_toggle_trader_on(telegram_controller, user_manager);
+  await use_toggle_trader_off(telegram_controller, user_manager);
 
   // start telegram events
   telegram_controller.start_handler.call(telegram_controller);
