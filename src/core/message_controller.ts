@@ -15,6 +15,8 @@ export interface MessageBind {
     text: string;
     extra?: ExtraEditMessageText;
   };
+  data?: unknown;
+  force?: number;
 }
 type ExpireCallback = (message: MessageBind) => Promise<void> | void;
 

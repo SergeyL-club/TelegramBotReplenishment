@@ -14,7 +14,7 @@ export const client_commands: Command[] = [
   { command: "/menu", description: "Открыть меню" },
 ] as const;
 
-export const client_menu_buttons: MenuButton[] = [] as const;
+export const client_menu_buttons: MenuButton[] = [{ text: "Баланс", positions: [0, 0] }] as const;
 export const trader_menu_buttons: MenuButton[] = [{ text: "Режим Сделок", positions: [0, 0] }] as const;
 export const admin_menu_buttons: MenuButton[] = [
   { text: "Методы Оплаты", positions: [1, 0] },
@@ -42,6 +42,16 @@ export function fragmentation_menu(menus: MenuButton[]): string[][] {
     menu_commands[row]![col] = menu_command.text;
   }
   return menu_commands;
+}
+
+export function fragmentation_inline<T>(data: T[], chunk_size = 3): T[][] {
+   const result: T[][] = [];
+
+  for (let i = 0; i < data.length; i += chunk_size) {
+    result.push(data.slice(i, i + chunk_size));
+  }
+
+  return result;
 }
 
 export function menu_roles(roles: RolesValue[]): MenuButton[] {

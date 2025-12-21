@@ -25,6 +25,7 @@ import { use_toggle_trader_off } from "./routes/trader_toggle_off.route";
 import { use_toggle_admin } from "./routes/admin_toggle.route";
 import { use_toggle_admin_on } from "./routes/admin_toggle_on.route";
 import { use_toggle_admin_off } from "./routes/admin_toggle_off.route";
+import { use_pre_deal } from "./routes/pre_deal.route";
 
 // telegram controller
 import { TelegramController } from "./core/telegram_controller";
@@ -108,6 +109,7 @@ async function main(): Promise<void> {
   await use_toggle_admin(telegram_controller, user_manager);
   await use_toggle_admin_on(telegram_controller, user_manager);
   await use_toggle_admin_off(telegram_controller, user_manager);
+  await use_pre_deal(telegram_controller, user_manager, deal_manager);
 
   // start telegram events
   telegram_controller.start_handler.call(telegram_controller);
