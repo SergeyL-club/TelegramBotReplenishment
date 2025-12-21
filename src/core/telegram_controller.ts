@@ -3,7 +3,6 @@ import type { Redis } from "ioredis";
 import type { CallbackQuery, Message, MessageEntity } from "telegraf/typings/core/types/typegram";
 import type { Logger } from "./logger";
 import { default_logger } from "./logger";
-import { Timer } from "./timer";
 import { MessageBind, MessageManager } from "./message_controller";
 
 type UpdateType = "message" | "callback_query" | "reply" | "command";
