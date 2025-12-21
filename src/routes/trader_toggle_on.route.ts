@@ -1,6 +1,6 @@
-import { default_logger } from "../core/logger";
 import type { TelegramController } from "../core/telegram_controller";
 import type { UserManager } from "../database/user_manager";
+import { default_logger } from "../core/logger";
 
 export async function use_toggle_trader_on(telegram_controller: TelegramController, user_manager: UserManager): Promise<void> {
   telegram_controller.use({ kid: "callback_query", math: (_, msg) => msg.data === "toggle_trader_on" }, async (ctx, _, binds) => {

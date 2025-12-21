@@ -1,6 +1,6 @@
-import { default_logger } from "../core/logger";
 import type { TelegramController } from "../core/telegram_controller";
 import type { UserManager } from "../database/user_manager";
+import { default_logger } from "../core/logger";
 
 export async function use_toggle_admin_off(telegram_controller: TelegramController, user_manager: UserManager): Promise<void> {
   telegram_controller.use({ kid: "callback_query", math: (_, msg) => msg.data === "toggle_admin_off" }, async (ctx, _, binds) => {

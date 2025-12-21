@@ -1,7 +1,7 @@
-import { default_logger } from "../core/logger";
 import type { TelegramController } from "../core/telegram_controller";
-import { admin_menu_buttons, Roles } from "../database/role_globals";
 import type { UserManager } from "../database/user_manager";
+import { admin_menu_buttons, Roles } from "../database/role_globals";
+import { default_logger } from "../core/logger";
 
 export async function use_toggle_admin(telegram_controller: TelegramController, user_manager: UserManager): Promise<void> {
   telegram_controller.use(

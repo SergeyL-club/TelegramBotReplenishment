@@ -1,7 +1,7 @@
-import { default_logger } from "../core/logger";
 import type { TelegramController } from "../core/telegram_controller";
-import { Roles, trader_menu_buttons } from "../database/role_globals";
 import type { UserManager } from "../database/user_manager";
+import { Roles, trader_menu_buttons } from "../database/role_globals";
+import { default_logger } from "../core/logger";
 
 export async function use_toggle_trader(telegram_controller: TelegramController, user_manager: UserManager): Promise<void> {
   telegram_controller.use(
