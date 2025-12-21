@@ -161,15 +161,16 @@ export class TelegramController {
       try {
         for (const { params, callback } of this.routes) {
           if (params.kid === "message" && (this.is_text_message(ctx.message) || this.is_photo_message(ctx.message))) {
-            if (params.math !== undefined && !(await params.math(ctx, ctx.message))) return;
+            if (params.math !== undefined && !(await params.math(ctx, ctx.message))) continue;
             await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
           } else if (params.kid === "command" && this.is_command_message(ctx.message)) {
-            if (params.math !== undefined && !(await params.math(ctx, ctx.message))) return;
+            if (params.math !== undefined && !(await params.math(ctx, ctx.message))) continue;
             await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
           } else if (params.kid === "reply" && this.is_reply_message(ctx.message)) {
             const reply_msg = ctx.message.reply_to_message;
             const bind_data = await this.bind_data(reply_msg.message_id);
-            if (params.math !== undefined && !(await params.math(ctx, ctx.message, bind_data))) return;
+            if (bind_data === null) continue;
+            if (params.math !== undefined && !(await params.math(ctx, ctx.message, bind_data))) continue;
             await ctx.deleteMessage(reply_msg.message_id);
             await ctx.deleteMessage(ctx.message.message_id);
             await this.delete_bind(reply_msg.message_id);
