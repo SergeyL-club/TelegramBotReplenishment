@@ -138,7 +138,13 @@ export class TelegramController {
   public start_handler(): void {
     this.bot.start(async (ctx) => {
       await this.logger.log(`User ${ctx.from.username} (${ctx.from.id}) started working with the bot`);
-      await Promise.all(this.starts.map(async (callback) => await callback(ctx)));
+      try {
+        for (const callback of this.starts) {
+          await callback(ctx);
+        }
+      } catch (error: unknown) {
+        await this.logger.error("Start Error: ", error);
+      }
     });
   }
 
@@ -153,40 +159,25 @@ export class TelegramController {
       if (ctx.message === undefined) return;
 
       try {
-        if (this.is_reply_message(ctx.message))
-          await Promise.all(
-            this.routes
-              .filter(({ params }) => params.kid === "reply")
-              .map(async ({ params, callback }) => {
-                const msg = ctx.message as MessageReply;
-                const reply_msg = msg.reply_to_message;
-                const bind_data = await this.bind_data(reply_msg.message_id);
-                if (params.math !== undefined && !(await params.math(ctx, msg, bind_data))) return;
-                await Promise.all([ctx.deleteMessage(reply_msg.message_id), ctx.deleteMessage(msg.message_id)]);
-                await this.delete_bind(reply_msg.message_id);
-                await callback(ctx, msg, { bind: this.bind.bind(this), data: bind_data });
-              })
-          );
-        else if (this.is_command_message(ctx.message))
-          await Promise.all(
-            this.routes
-              .filter(({ params }) => params.kid === "command")
-              .map(async ({ params, callback }) => {
-                if (params.math !== undefined && !(await params.math(ctx, ctx.message))) return;
-                await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
-              })
-          );
-        else if (this.is_text_message(ctx.message) || this.is_photo_message(ctx.message))
-          await Promise.all(
-            this.routes
-              .filter(({ params }) => params.kid === "message")
-              .map(async ({ params, callback }) => {
-                if (params.math !== undefined && !(await params.math(ctx, ctx.message))) return;
-                await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
-              })
-          );
+        for (const { params, callback } of this.routes) {
+          if (params.kid === "message" && (this.is_text_message(ctx.message) || this.is_photo_message(ctx.message))) {
+            if (params.math !== undefined && !(await params.math(ctx, ctx.message))) return;
+            await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
+          } else if (params.kid === "command" && this.is_command_message(ctx.message)) {
+            if (params.math !== undefined && !(await params.math(ctx, ctx.message))) return;
+            await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
+          } else if (params.kid === "reply" && this.is_reply_message(ctx.message)) {
+            const reply_msg = ctx.message.reply_to_message;
+            const bind_data = await this.bind_data(reply_msg.message_id);
+            if (params.math !== undefined && !(await params.math(ctx, ctx.message, bind_data))) return;
+            await ctx.deleteMessage(reply_msg.message_id);
+            await ctx.deleteMessage(ctx.message.message_id);
+            await this.delete_bind(reply_msg.message_id);
+            await callback(ctx, ctx.message, { bind: this.bind.bind(this), data: bind_data });
+          }
+        }
       } catch (error: unknown) {
-        await this.logger.error("Unknow Error: ", { error });
+        await this.logger.error("Message Error: ", error);
       }
     });
   }
@@ -204,7 +195,7 @@ export class TelegramController {
           await callback(ctx, ctx.callbackQuery, { bind: this.bind.bind(this) });
         }
       } catch (error: unknown) {
-        await this.logger.error("Unknow Error: ", { error });
+        await this.logger.error("Callback Error: ", { error });
       }
     });
   }
