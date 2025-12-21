@@ -4,6 +4,7 @@ import type { UserManager } from "../database/user_manager";
 
 export async function use_toggle_trader_on(telegram_controller: TelegramController, user_manager: UserManager): Promise<void> {
   telegram_controller.use({ kid: "callback_query", math: (_, msg) => msg.data === "toggle_trader_on" }, async (ctx, _, binds) => {
+    await ctx.answerCbQuery();
     await user_manager.toggle_trader_by_user_id(ctx.from!.id, true);
     const toggle_trader = (await user_manager.ready_traders()).includes(ctx.from!.id);
     const ids = await binds.message_controller.command_update("toggle_trader");
