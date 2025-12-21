@@ -7,7 +7,7 @@ export async function use_method_add(telegram_controller: TelegramController, de
     await ctx.answerCbQuery();
     if (cb.message === undefined) return;
     const is = await ctx.reply("Напишите название метода оплаты", { reply_markup: { force_reply: true } });
-    await binds.message_manager.bind({
+    await binds.message_controller.bind({
       command: "add_get_method_name",
       chat_id: is.chat.id,
       message_id: is.message_id,
@@ -29,9 +29,9 @@ export async function use_method_add(telegram_controller: TelegramController, de
       }
       await deal_manager.create_method(method_name);
       const methods = await deal_manager.methods_names_all();
-      const ids = await binds.message_manager.command_update("list_methods");
+      const ids = await binds.message_controller.command_update("list_methods");
       for (const id of ids) {
-        const data = await binds.message_manager.get(id);
+        const data = await binds.message_controller.get(id);
         if (data === null) continue;
 
         await ctx.telegram.editMessageText(

@@ -6,9 +6,9 @@ export async function use_toggle_trader_off(telegram_controller: TelegramControl
   telegram_controller.use({ kid: "callback_query", math: (_, msg) => msg.data === "toggle_trader_off" }, async (ctx, _, binds) => {
     await user_manager.toggle_trader_by_user_id(ctx.from!.id, false);
     const toggle_trader = (await user_manager.ready_traders()).includes(ctx.from!.id);
-    const ids = await binds.message_manager.command_update("toggle_trader");
+    const ids = await binds.message_controller.command_update("toggle_trader");
     for (const id of ids) {
-      const data = await binds.message_manager.get(id);
+      const data = await binds.message_controller.get(id);
       if (data === null) continue;
       await ctx.telegram.editMessageText(
         data.chat_id,

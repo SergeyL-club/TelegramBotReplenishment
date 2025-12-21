@@ -3,7 +3,7 @@ import type { Redis } from "ioredis";
 import type { CallbackQuery, Message, MessageEntity } from "telegraf/typings/core/types/typegram";
 import type { Logger } from "./logger";
 import { default_logger } from "./logger";
-import { MessageBind, MessageManager } from "./message_controller";
+import { MessageBind, MessageController } from "./message_controller";
 
 type UpdateType = "message" | "callback_query" | "reply" | "command";
 type MathFunction = (...args: unknown[]) => Promise<boolean> | boolean;
@@ -23,7 +23,7 @@ interface RouteParams {
 }
 
 interface CallbackParams {
-  message_manager: MessageManager;
+  message_controller: MessageController;
 }
 
 type RouteCallback = (...args: unknown[]) => Promise<void> | void;
@@ -33,13 +33,13 @@ export class TelegramController {
   private routes: { params: RouteParams; callback: RouteCallback }[] = [];
   private starts: StartHandler[] = [];
 
-  private message_manager: MessageManager;
+  private message_controller: MessageController;
   private logger: Logger;
 
   public constructor(bot_token: string, db_api: Redis, options?: { db_name?: string; logger?: Logger }) {
     this.logger = options?.logger ?? default_logger;
     this.bot = new Telegraf<Context>(bot_token);
-    this.message_manager = new MessageManager(db_api, this.timeout_callback.bind(this), options?.db_name);
+    this.message_controller = new MessageController(db_api, this.timeout_callback.bind(this), options?.db_name);
   }
 
   private async timeout_callback(message: MessageBind): Promise<void> {
@@ -103,19 +103,19 @@ export class TelegramController {
         for (const { params, callback } of this.routes) {
           if (params.kid === "message" && (this.is_text_message(ctx.message) || this.is_photo_message(ctx.message))) {
             if (params.math !== undefined && !(await params.math(ctx, ctx.message))) continue;
-            await callback(ctx, ctx.message, { message_manager: this.message_manager });
+            await callback(ctx, ctx.message, { message_controller: this.message_controller });
           } else if (params.kid === "command" && this.is_command_message(ctx.message)) {
             if (params.math !== undefined && !(await params.math(ctx, ctx.message))) continue;
-            await callback(ctx, ctx.message, { message_manager: this.message_manager });
+            await callback(ctx, ctx.message, { message_controller: this.message_controller });
           } else if (params.kid === "reply" && this.is_reply_message(ctx.message)) {
             const reply_msg = ctx.message.reply_to_message;
-            const message_bind = await this.message_manager.get(reply_msg.message_id);
+            const message_bind = await this.message_controller.get(reply_msg.message_id);
             if (message_bind === null) continue;
             if (params.math !== undefined && !(await params.math(ctx, ctx.message, message_bind))) continue;
             await ctx.deleteMessage(message_bind.message_id);
             await ctx.deleteMessage(ctx.message.message_id);
-            await this.message_manager.delete(message_bind.message_id);
-            await callback(ctx, ctx.message, { message_manager: this.message_manager, message_bind: message_bind });
+            await this.message_controller.delete(message_bind.message_id);
+            await callback(ctx, ctx.message, { message_controller: this.message_controller, message_bind: message_bind });
           }
         }
       } catch (error: unknown) {
@@ -134,7 +134,7 @@ export class TelegramController {
           if (params.kid !== "callback_query") continue;
           if (!this.is_callback_query(ctx.callbackQuery)) continue;
           if (params.math !== undefined && !(await params.math(ctx, ctx.callbackQuery))) continue;
-          await callback(ctx, ctx.callbackQuery, { message_manager: this.message_manager });
+          await callback(ctx, ctx.callbackQuery, { message_controller: this.message_controller });
         }
       } catch (error: unknown) {
         await this.logger.error("Callback Error: ", { error });
@@ -147,11 +147,11 @@ export class TelegramController {
   }
 
   public start_timeout_delete_binds(): void {
-    this.message_manager.start_timeout_delete_binds();
+    this.message_controller.start_timeout_delete_binds();
   }
 
   public stop_timeout_delete_binds(): void {
-    this.message_manager.stop_timeout_delete_binds();
+    this.message_controller.stop_timeout_delete_binds();
   }
 
   public async start(): Promise<void> {

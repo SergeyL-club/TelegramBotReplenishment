@@ -27,7 +27,7 @@ export async function use_toggle_trader(telegram_controller: TelegramController,
           },
         }
       );
-      await binds.message_manager.bind({
+      await binds.message_controller.bind({
         command: "toggle_trader",
         chat_id: is.chat.id,
         message_id: is.message_id,

@@ -20,7 +20,7 @@ export async function use_method(telegram_controller: TelegramController, deal_m
         },
       });
 
-      await binds.message_manager.bind({
+      await binds.message_controller.bind({
         command: "list_methods",
         chat_id: is.chat.id,
         message_id: is.message_id,

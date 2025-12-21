@@ -18,7 +18,7 @@ export interface MessageBind {
 }
 type ExpireCallback = (message: MessageBind) => Promise<void> | void;
 
-export class MessageManager {
+export class MessageController {
   public constructor(
     private db_api: Redis,
     timeout_callback: ExpireCallback,
