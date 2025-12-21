@@ -6,8 +6,8 @@ import { default_logger } from "../core/logger";
 export async function use_method(telegram_controller: TelegramController, deal_manager: DealManager): Promise<void> {
   telegram_controller.use(
     { kid: "message", math: (_, msg) => "text" in msg && msg.text === admin_menu_buttons[0]?.text },
-    async (ctx, _, binds) => {
-      await ctx.deleteMessage(ctx.message?.message_id);
+    async (ctx, message, binds) => {
+      await ctx.deleteMessage(message.message_id);
       const methods = await deal_manager.methods_names_all();
       const is = await ctx.reply(`Список методов оплаты: ${JSON.stringify(methods ?? [])}`, {
         reply_markup: {
