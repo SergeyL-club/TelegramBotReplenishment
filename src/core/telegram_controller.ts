@@ -4,6 +4,7 @@ import type { CallbackQuery, Message, MessageEntity } from "telegraf/typings/cor
 import type { Logger } from "./logger";
 import { default_logger } from "./logger";
 import { Timer } from "./timer";
+import { MessageBind, MessageManager } from "./message_controller";
 
 type UpdateType = "message" | "callback_query" | "reply" | "command";
 type MathFunction = (...args: unknown[]) => Promise<boolean> | boolean;
@@ -17,20 +18,13 @@ export type MessageCommand = MessageBase & { entities: MessageEntity[] };
 export type MessageReply = MessageBase & { reply_to_message: MessageBase };
 export type MessageCallback = CallbackQuery.DataQuery;
 
-type BindData = [
-  command_name: string,
-  chat_id: number,
-  old_message: { message_id: number; chat_id: number; text: string },
-  delete_at: number,
-];
-
 interface RouteParams {
   kid: UpdateType;
   math?: MathFunction;
 }
 
 interface CallbackParams {
-  bind: TelegramController["bind"];
+  message_manager: MessageManager;
 }
 
 type RouteCallback = (...args: unknown[]) => Promise<void> | void;
@@ -40,43 +34,27 @@ export class TelegramController {
   private routes: { params: RouteParams; callback: RouteCallback }[] = [];
   private starts: StartHandler[] = [];
 
-  private timer: Timer;
+  private message_manager: MessageManager;
   private logger: Logger;
 
-  private message_replys: string;
-  private message_reply_data: string;
-
-  public constructor(
-    bot_token: string,
-    private db_api: Redis,
-    options?: { db_name?: string; logger?: Logger }
-  ) {
+  public constructor(bot_token: string, db_api: Redis, options?: { db_name?: string; logger?: Logger }) {
     this.logger = options?.logger ?? default_logger;
     this.bot = new Telegraf<Context>(bot_token);
-    this.timer = new Timer(this.timeout_delete_binds.bind(this), 1000);
-    this.message_replys = `${options?.db_name ?? "tg_trader"}:message:replys`;
-    this.message_reply_data = `${options?.db_name ?? "tg_trader"}:message:replys:data`;
+    this.message_manager = new MessageManager(db_api, this.timeout_callback.bind(this), options?.db_name);
   }
 
-  public start_timeout_delete_binds(): void {
-    this.timer.start();
-  }
-
-  public stop_timeout_delete_binds(): void {
-    this.timer.stop();
-  }
-
-  private async timeout_delete_binds(): Promise<void> {
-    const bind_ids = await this.binds();
-    if (bind_ids === null) return;
-    const now = Date.now();
-    for (const message_id of bind_ids) {
-      const message_data = await this.bind_data(message_id);
-      if (message_data === null) continue;
-      if (message_data[3] > now) continue;
-      await this.delete_bind(message_id);
-      await this.bot.telegram.deleteMessage(message_data[1], message_id);
+  private async timeout_callback(message: MessageBind): Promise<void> {
+    if (message.edit === undefined) {
+      await this.bot.telegram.deleteMessage(message.chat_id, message.message_id);
+      return;
     }
+    await this.bot.telegram.editMessageText(
+      message.chat_id,
+      message.message_id,
+      undefined,
+      "[Истек] " + message.edit.text,
+      message.edit.extra
+    );
   }
 
   private is_text_message(msg: Message | undefined): msg is Message.TextMessage {
@@ -97,42 +75,6 @@ export class TelegramController {
 
   private is_command_message(msg: Message | undefined): msg is MessageCommand {
     return msg !== undefined && "entities" in msg && msg.entities.some((el) => el.type === "bot_command" && el.offset === 0);
-  }
-
-  private async bind_data(message_id: number): Promise<BindData | null> {
-    if (!(await this.is_bind(message_id))) return null;
-    return JSON.parse((await this.db_api.hget(this.message_reply_data, message_id.toString()))!) as BindData;
-  }
-
-  private async bind(
-    command_name: string,
-    chat_id: number,
-    message_id: number,
-    old_message: BindData["2"],
-    delete_at: number
-  ): Promise<boolean> {
-    const multi = this.db_api.multi();
-    multi.sadd(this.message_replys, message_id.toString());
-    multi.hset(this.message_reply_data, message_id.toString(), JSON.stringify([command_name, chat_id, old_message, delete_at]));
-
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
-  }
-
-  private async is_bind(message_id: number): Promise<boolean> {
-    return (await this.db_api.sismember(this.message_replys, message_id)) > 0;
-  }
-
-  private async binds(): Promise<number[] | null> {
-    const data = await this.db_api.smembers(this.message_replys);
-    return data.length > 0 ? data.map(Number) : null;
-  }
-
-  private async delete_bind(message_id: number): Promise<boolean> {
-    const multi = this.db_api.multi();
-    multi.srem(this.message_replys, message_id.toString());
-    multi.hdel(this.message_reply_data, message_id.toString());
-
-    return (await multi.exec())?.every((value) => value[0] !== null) ?? false;
   }
 
   public start_handler(): void {
@@ -162,19 +104,19 @@ export class TelegramController {
         for (const { params, callback } of this.routes) {
           if (params.kid === "message" && (this.is_text_message(ctx.message) || this.is_photo_message(ctx.message))) {
             if (params.math !== undefined && !(await params.math(ctx, ctx.message))) continue;
-            await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
+            await callback(ctx, ctx.message, { message_manager: this.message_manager });
           } else if (params.kid === "command" && this.is_command_message(ctx.message)) {
             if (params.math !== undefined && !(await params.math(ctx, ctx.message))) continue;
-            await callback(ctx, ctx.message, { bind: this.bind.bind(this) });
+            await callback(ctx, ctx.message, { message_manager: this.message_manager });
           } else if (params.kid === "reply" && this.is_reply_message(ctx.message)) {
             const reply_msg = ctx.message.reply_to_message;
-            const bind_data = await this.bind_data(reply_msg.message_id);
-            if (bind_data === null) continue;
-            if (params.math !== undefined && !(await params.math(ctx, ctx.message, bind_data))) continue;
-            await ctx.deleteMessage(reply_msg.message_id);
+            const message_bind = await this.message_manager.get(reply_msg.message_id);
+            if (message_bind === null) continue;
+            if (params.math !== undefined && !(await params.math(ctx, ctx.message, message_bind))) continue;
+            await ctx.deleteMessage(message_bind.message_id);
             await ctx.deleteMessage(ctx.message.message_id);
-            await this.delete_bind(reply_msg.message_id);
-            await callback(ctx, ctx.message, { bind: this.bind.bind(this), data: bind_data });
+            await this.message_manager.delete(message_bind.message_id);
+            await callback(ctx, ctx.message, { message_manager: this.message_manager, message_bind: message_bind });
           }
         }
       } catch (error: unknown) {
@@ -193,7 +135,7 @@ export class TelegramController {
           if (params.kid !== "callback_query") continue;
           if (!this.is_callback_query(ctx.callbackQuery)) continue;
           if (params.math !== undefined && !(await params.math(ctx, ctx.callbackQuery))) continue;
-          await callback(ctx, ctx.callbackQuery, { bind: this.bind.bind(this) });
+          await callback(ctx, ctx.callbackQuery, { message_manager: this.message_manager });
         }
       } catch (error: unknown) {
         await this.logger.error("Callback Error: ", { error });
@@ -203,6 +145,14 @@ export class TelegramController {
 
   public get_bot(): Telegraf<Context> {
     return this.bot;
+  }
+
+  public start_timeout_delete_binds(): void {
+    this.message_manager.start_timeout_delete_binds();
+  }
+
+  public stop_timeout_delete_binds(): void {
+    this.message_manager.stop_timeout_delete_binds();
   }
 
   public async start(): Promise<void> {
@@ -231,8 +181,8 @@ export class TelegramController {
     callback: (ctx: Context, msg: MessageCommand, options: CallbackParams) => void | Promise<void>
   ): void;
   public use(
-    params: { kid: "reply"; math?: (ctx: Context, msg: MessageReply, bind_data: BindData) => boolean | Promise<boolean> },
-    callback: (ctx: Context, msg: MessageReply, options: CallbackParams & { data: BindData }) => void | Promise<void>
+    params: { kid: "reply"; math?: (ctx: Context, msg: MessageReply, message_bind: MessageBind) => boolean | Promise<boolean> },
+    callback: (ctx: Context, msg: MessageReply, options: CallbackParams & { message_bind: MessageBind }) => void | Promise<void>
   ): void;
   public use(
     params: {
