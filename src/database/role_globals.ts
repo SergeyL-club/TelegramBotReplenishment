@@ -14,9 +14,12 @@ export const client_commands: Command[] = [
   { command: "/menu", description: "Открыть меню" },
 ] as const;
 
-export const client_menu_buttons: MenuButton[] = [{ text: "Тест", positions: [0, 0] }] as const;
+export const client_menu_buttons: MenuButton[] = [] as const;
 export const trader_menu_buttons: MenuButton[] = [{ text: "Режим Сделок", positions: [0, 0] }] as const;
-export const admin_menu_buttons: MenuButton[] = [{ text: "Методы Оплаты", positions: [0, 0] }] as const;
+export const admin_menu_buttons: MenuButton[] = [
+  { text: "Методы Оплаты", positions: [1, 0] },
+  { text: "Режим Уведомлений", positions: [1, 1] },
+] as const;
 
 export const menu_buttons: (MenuButton & { role: RolesValue })[] = [
   ...client_menu_buttons.map((el) => ({ role: Roles.CLIENT, ...el })),

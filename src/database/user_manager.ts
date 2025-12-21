@@ -18,6 +18,7 @@ export class UserManager {
     this.user_roles = (user_id): string => `${db_name}:users:roles:${user_id}`;
 
     this.user_traders = `${db_name}:users:traders`;
+    this.user_admins = `${db_name}:users:admins`;
   }
 
   private user_ids;
@@ -26,6 +27,7 @@ export class UserManager {
   private user_roles: (user_id: number) => string;
 
   private user_traders;
+  private user_admins;
 
   // Проверка на наличие пользователя
   public async verification_by_user_id(user_id: number): Promise<boolean> {
@@ -63,6 +65,20 @@ export class UserManager {
   }
   public async ready_traders(): Promise<number[]> {
     return (await this.db_api.smembers(this.user_traders)).map(Number);
+  }
+
+  // Функции admin
+  public async verification_admin_by_user_id(user_id: number): Promise<boolean> {
+    return (await this.db_api.sismember(this.user_admins, user_id.toString())) > 0;
+  }
+  public async toggle_admin_by_user_id(user_id: number, is?: boolean): Promise<boolean> {
+    const is_verify = await this.verification_admin_by_user_id(user_id);
+    if (is === is_verify) return true;
+    if (is === true || (is === undefined && is_verify === false)) return (await this.db_api.sadd(this.user_admins, user_id.toString())) > 0;
+    return (await this.db_api.srem(this.user_admins, user_id.toString())) > 0;
+  }
+  public async ready_admins(): Promise<number[]> {
+    return (await this.db_api.smembers(this.user_admins)).map(Number);
   }
 
   // Весь блок пользователя
