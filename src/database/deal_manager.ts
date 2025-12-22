@@ -33,6 +33,7 @@ export class DealManager {
     this.deal_states = `${db_name}:deals:states`;
     this.deal_details = `${db_name}:deals:details`;
     this.deal_method_names = `${db_name}:deals:method:names`;
+    this.deal_sums = `${db_name}:deals:sums`;
     this.deal_creation_times = `${db_name}:deals:creation_times`;
 
     this.method_names = `${db_name}:method:names`;
@@ -50,7 +51,9 @@ export class DealManager {
     this.deal_finish_creation_times = `${db_name}:deals:finish:creation_times`;
 
     this.deal_clients = `${db_name}:deals:clients`;
+    this.deal_client_messages = (id): string => `${db_name}:deals:clients:messages:${id}`;
     this.deal_traders = `${db_name}:deals:traders`;
+    this.deal_trader_messages = (id): string => `${db_name}:deals:traders:messages:${id}`;
     this.last_id = `${db_name}:deals:last_id`;
   }
 
@@ -59,8 +62,11 @@ export class DealManager {
   private deal_states;
   private deal_details;
   private deal_method_names;
+  private deal_sums;
   private deal_clients;
+  private deal_client_messages: (id: number) => string;
   private deal_traders;
+  private deal_trader_messages: (id: number) => string;
   private deal_creation_times;
 
   // methods
@@ -181,9 +187,10 @@ export class DealManager {
 
   // Функции сделки
   public async create_deal(
-    client_id: number,
-    trader_id: number,
+    client: { id: number; messages: number[] },
+    trader: { id: number; messages: number[] },
     method_name: string,
+    sum: number,
     details: string,
     create_at = Date.now()
   ): Promise<number | false> {
@@ -192,11 +199,14 @@ export class DealManager {
     const multi = this.db_api.multi();
 
     multi.sadd(this.deal_ids, deal_id.toString());
-    multi.hset(this.deal_clients, deal_id.toString(), client_id.toString());
-    multi.hset(this.deal_traders, deal_id.toString(), trader_id.toString());
+    multi.hset(this.deal_clients, deal_id.toString(), client.id.toString());
+    multi.sadd(this.deal_client_messages(deal_id), client.messages);
+    multi.hset(this.deal_traders, deal_id.toString(), trader.id.toString());
+    multi.hset(this.deal_trader_messages(deal_id), trader.messages);
     multi.hset(this.deal_states, deal_id.toString(), States.OPEN);
     multi.hset(this.deal_details, deal_id.toString(), details);
     multi.hset(this.deal_method_names, deal_id.toString(), method_name);
+    multi.hset(this.deal_sums, deal_id.toString(), sum.toString());
     multi.hset(this.deal_creation_times, deal_id.toString(), create_at.toString());
 
     return (await multi.exec())?.every((value) => value[0] === null) ? deal_id : false;
