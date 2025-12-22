@@ -1,63 +1,63 @@
-import type { Context } from "telegraf";
-import type { Message, CallbackQuery } from "telegraf/types";
+import js from "@eslint/js";
+import globals from "globals";
+import tseslint from "typescript-eslint";
+import { defineConfig } from "eslint/config";
 
-export type telegram_payload =
-  | { type: "message"; message: Message.TextMessage | Message.PhotoMessage; ctx: Context }
-  | { type: "callback_query"; callback: CallbackQuery.DataQuery; ctx: Context }
-  | { type: "reply_message"; message: Message.TextMessage | Message.PhotoMessage; reply_to: Message; ctx: Context }
-  | { type: "command"; message: Message.TextMessage | Message.PhotoMessage; ctx: Context };
+export default defineConfig([
+  tseslint.configs.recommended,
+  { ignores: ["node_modules/**", ".husky/**", "./build/**", "eslint.config.ts", "jest.config.js", "init-husky.js", "./tests/**"] },
+  {
+    files: ["**/*.{js,mjs,cjs,ts,mts,cts}"],
+    plugins: { js, "@typescript-eslint": tseslint.plugin },
+    extends: [
+      "js/recommended",
+      tseslint.configs.recommendedTypeChecked,
+      {
+        languageOptions: {
+          parserOptions: {
+            projectService: true,
+          },
+        },
+      },
+    ],
+    languageOptions: { globals: globals.node, parser: tseslint.parser, sourceType: "module" },
+    rules: {
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "variable",
+          format: ["snake_case"],
+        },
+        {
+          selector: "function",
+          format: ["snake_case"],
+        },
+        {
+          selector: "parameter",
+          format: ["snake_case"],
+        },
+        {
+          selector: "property",
+          modifiers: ["private"],
+          format: ["snake_case"],
+        },
+      ],
 
-type telegram_adapter_callback = (payload: telegram_payload) => void | Promise<void>;
+      // Всегда ;
+      semi: ["error", "always"],
 
-export class telegram_adapter {
-  private message_handlers: telegram_adapter_callback[] = [];
-  private callback_handlers: telegram_adapter_callback[] = [];
-  private reply_handlers: telegram_adapter_callback[] = [];
-  private command_handlers: telegram_adapter_callback[] = [];
+      // Только двойные кавычки
+      quotes: ["error", "double", { allowTemplateLiterals: false }],
 
-  public on_message(callback: telegram_adapter_callback): void {
-    this.message_handlers.push(callback);
-  }
+      // Запрет ``строк`` без ${}
+      "no-useless-concat": "error",
+      "no-template-curly-in-string": "error",
 
-  public on_callback(callback: telegram_adapter_callback): void {
-    this.callback_handlers.push(callback);
-  }
-
-  public on_reply(callback: telegram_adapter_callback): void {
-    this.reply_handlers.push(callback);
-  }
-
-  public on_command(callback: telegram_adapter_callback): void {
-    this.command_handlers.push(callback);
-  }
-
-  public async handle_update(ctx: Context): Promise<void> {
-    if (ctx.callbackQuery && "data" in ctx.callbackQuery) {
-      const payload: telegram_payload = { type: "callback_query", callback: ctx.callbackQuery, ctx };
-      for (const handler of this.callback_handlers) await handler(payload);
-      return;
-    }
-
-    if (!ctx.message || !("text" in ctx.message) || !("caption" in ctx.message)) return;
-
-    const msg: Message.TextMessage | Message.CaptionableMessage = ctx.message;
-
-    if ("reply_to_message" in msg && msg.reply_to_message) {
-      const payload: telegram_payload = { type: "reply_message", message: msg, reply_to: msg.reply_to_message, ctx };
-      for (const handler of this.reply_handlers) await handler(payload);
-      return;
-    }
-
-    if ("entities" in msg && Array.isArray(msg.entities)) {
-      const has_command: boolean = msg.entities.some((e) => e.type === "bot_command" && e.offset === 0);
-      if (has_command) {
-        const payload: telegram_payload = { type: "command", message: msg, ctx };
-        for (const handler of this.command_handlers) await handler(payload);
-        return;
-      }
-    }
-
-    const payload: telegram_payload = { type: "message", message: msg, ctx };
-    for (const handler of this.message_handlers) await handler(payload);
-  }
-}
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-floating-promises": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/require-await": "off",
+    },
+  },
+]);

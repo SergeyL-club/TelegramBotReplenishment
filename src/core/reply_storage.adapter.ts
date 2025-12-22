@@ -1,4 +1,3 @@
-import type { Context } from "telegraf";
 import type { Redis } from "ioredis";
 import type { EventAdapter } from "./event.adapter";
 
@@ -32,7 +31,7 @@ export class RedisReplyAdapter implements ReplyStorageAdapter {
   public async get(chat_id: number, user_id: number, message_id: number): Promise<{ data: unknown; delete_at?: number } | null> {
     const raw = await this.redis.get(this.key(chat_id, user_id, message_id));
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(raw) as { data: unknown; delete_at?: number };
     if (parsed.delete_at && parsed.delete_at < Date.now()) {
       await this.delete(chat_id, user_id, message_id);
       return null;

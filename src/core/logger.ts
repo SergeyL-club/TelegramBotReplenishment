@@ -56,7 +56,7 @@ export class Logger {
     const timestamp = timestamp_raw ?? new Date().toISOString();
     const level = (level_raw ?? "log").toLowerCase() as LogLevel;
     let message = message_raw ?? "";
-    let meta: unknown | undefined = undefined;
+    let meta: object | undefined = undefined;
     if (level === "log" && message.trim() === "") return null;
 
     if (json_raw) {

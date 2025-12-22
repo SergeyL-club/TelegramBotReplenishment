@@ -25,7 +25,7 @@ export class FlowEngine {
     this.handlers.set(event_type, handler as FlowHandler);
   }
 
-  public async dispatch(user_id: number, event: DomainEvent): Promise<any> {
+  public async dispatch(user_id: number, event: DomainEvent): Promise<void | ReturnUIInstruction | null> {
     const context = (await this.context_adapter.get(user_id)) ?? { user_id: event.user_id, chat_id: event.chat_id };
     const handler = this.handlers.get(event.type);
 

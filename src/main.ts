@@ -117,7 +117,9 @@ async function main(): Promise<void> {
   reply_timer.start();
 
   // launch telegraf
-  telegraf.launch(() => default_logger.info("Launch Telegram Bot"));
+  telegraf.launch(() => {
+    default_logger.info("Launch Telegram Bot");
+  });
 }
 
 main().catch((err: unknown) => {

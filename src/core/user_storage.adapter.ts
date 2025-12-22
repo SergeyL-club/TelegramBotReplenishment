@@ -23,7 +23,7 @@ export class RedisContextAdapter implements ContextStorageAdapter {
     const data = await this.redis.get(this.key(user_id));
     if (!data) return null;
     try {
-      return JSON.parse(data);
+      return JSON.parse(data) as Record<string, unknown>;
     } catch {
       return null;
     }
