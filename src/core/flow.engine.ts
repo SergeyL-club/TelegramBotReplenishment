@@ -1,6 +1,6 @@
 import type { DomainBase, DomainEvent } from "./event.adapter";
 import type { ContextStorageAdapter } from "./user_storage.adapter";
-import type { UIInstruction } from "./ui_adapter";
+import type { UIInstruction } from "./ui.adapter";
 
 type ReturnUIInstruction = { on_enter?: UIInstruction | UIInstruction[]; on_exit?: UIInstruction | UIInstruction[] };
 

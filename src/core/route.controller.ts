@@ -1,7 +1,7 @@
 import type { TelegramAdapter, telegram_payload } from "./telegram.adapter";
 import type { EventAdapter, DomainEvent } from "./event.adapter";
 import type { FlowEngine } from "./flow.engine";
-import type { UIAdapter } from "./ui_adapter";
+import type { UIAdapter } from "./ui.adapter";
 
 export class RouteController {
   constructor(

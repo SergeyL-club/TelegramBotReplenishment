@@ -36,7 +36,7 @@ import { FlowEngine } from "./core/flow.engine";
 const flow_engine = new FlowEngine(context_adapter);
 
 // ui adapter
-import { UIAdapter } from "./core/ui_adapter";
+import { UIAdapter } from "./core/ui.adapter";
 const ui_adapter = new UIAdapter(reply_adapter);
 
 // route controller
