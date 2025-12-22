@@ -7,14 +7,14 @@ export type DomainEvent = ({ type: "reply_expired"; message_id: number } | { typ
 
 export type Payload = (telegram_payload | ReplyPayload) & { bind_data?: unknown };
 
-type event_mapper = (payload: Payload) => Promise<DomainEvent | null> | DomainEvent | null;
+type EventMapper = (payload: Payload) => Promise<DomainEvent | null> | DomainEvent | null;
 
 export class EventAdapter {
-  private mappers: event_mapper[] = [];
+  private mappers: EventMapper[] = [];
 
   public constructor(private readonly reply_adapter: ReplyStorageAdapter) {}
 
-  public register_mapper(mapper: event_mapper): void {
+  public register_mapper(mapper: EventMapper): void {
     this.mappers.push(mapper);
   }
 
