@@ -5,9 +5,9 @@ export type DomainBase = { user_id: number; chat_id: number };
 
 export type DomainEvent = ({ type: "reply_expired"; message_id: number } | { type: "unknown"; payload: unknown }) & DomainBase;
 
-type Payload = telegram_payload | ReplyPayload;
+export type Payload = (telegram_payload | ReplyPayload) & { bind_data?: unknown };
 
-type event_mapper = (payload: Payload & { bind_data?: unknown }) => Promise<DomainEvent | null> | DomainEvent | null;
+type event_mapper = (payload: Payload) => Promise<DomainEvent | null> | DomainEvent | null;
 
 export class EventAdapter {
   private mappers: event_mapper[] = [];
@@ -29,7 +29,7 @@ export class EventAdapter {
         return { type: "unknown", chat_id, user_id, payload };
       }
       // Можно передавать bind_data в event, если нужно
-      (payload as any).bind_data = bind.data;
+      payload.bind_data = bind.data;
     }
 
     // Пробуем пройтись по зарегистрированным мапперам
