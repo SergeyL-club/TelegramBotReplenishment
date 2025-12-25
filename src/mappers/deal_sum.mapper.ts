@@ -22,12 +22,12 @@ export function use_deal_sum_mapper(event_adapter: EventAdapter): void {
   event_adapter.register_mapper((payload) => {
     if (payload.type !== "callback_query" || !payload.callback.message || !payload.callback.data.startsWith("callback_menu_reply_deal_sum"))
       return null;
-    const [_, pre_deal_id, edit_id] = payload.callback.data.split(":");
+    const [pre_deal_id, edit_id] = payload.callback.data.split(":").slice(1);
     if (!pre_deal_id || !edit_id) return null;
     const event: DomainEvent<"callback_menu_reply_deal_sum"> = {
       type: "callback_menu_reply_deal_sum",
       chat_id: payload.callback.message.chat.id,
-      user_id: payload.callback.from!.id,
+      user_id: payload.callback.from.id,
       pre_deal_id: Number(pre_deal_id),
       edit_id: Number(edit_id),
     };

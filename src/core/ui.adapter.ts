@@ -2,7 +2,7 @@ import type { Context } from "telegraf";
 import type { ReplyStorageAdapter } from "./reply_storage.adapter";
 import type { ContextStorageAdapter } from "./user_storage.adapter";
 
-function deep_merge(a: Record<string, any>, b: Record<string, any>, strict = false): Record<string, any> {
+function deep_merge(a: Record<string, unknown>, b: Record<string, unknown>, strict = false): Record<string, unknown> {
   const result = { ...a };
 
   for (const key in b) {
@@ -29,7 +29,7 @@ function deep_merge(a: Record<string, any>, b: Record<string, any>, strict = fal
       !Array.isArray(b[key])
     ) {
       // рекурсивно сливаем объекты
-      result[key] = deep_merge(result[key], b[key]);
+      result[key] = deep_merge(result[key] as Record<string, unknown>, b[key] as Record<string, unknown>);
     } else {
       // если ключ новый или тип не совпадает — заменяем
       result[key] = b[key];
@@ -99,7 +99,7 @@ export class UIAdapter {
 
       // если есть bind_data — сохраняем привязку
       if (instruction.bind_data) {
-        const message_id = (sent_message as any)?.message_id ?? instruction.edit_message_id!;
+        const message_id = ((sent_message as any)?.message_id as number) ?? instruction.edit_message_id!;
         const bind_data = instruction.bind_id ? { ...instruction.bind_data, bind_id: message_id } : instruction.bind_data;
         await this.reply_adapter.bind(ctx.chat!.id, ctx.from!.id, message_id, bind_data, instruction.delete_at);
       }

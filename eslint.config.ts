@@ -27,19 +27,22 @@ export default defineConfig([
         {
           selector: "variable",
           format: ["snake_case"],
+          leadingUnderscore: "allow",
         },
         {
           selector: "function",
           format: ["snake_case"],
         },
         {
-          selector: "parameter",
-          format: ["snake_case"],
-        },
-        {
           selector: "property",
           modifiers: ["private"],
           format: ["snake_case"],
+        },
+        {
+          selector: "parameter",
+          format: ["snake_case"],
+          modifiers: ["unused"],
+          leadingUnderscore: "allow",
         },
       ],
 
