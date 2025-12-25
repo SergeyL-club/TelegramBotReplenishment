@@ -11,11 +11,9 @@ export interface ReplyStorageAdapter {
 export type ReplyPayload = { type: "reply_expired"; chat_id: number; user_id: number; data: unknown; message_id: number };
 
 export class RedisReplyAdapter implements ReplyStorageAdapter {
-  private redis: Redis;
   private prefix: string;
 
-  constructor(redis: Redis, prefix = "reply_bind:") {
-    this.redis = redis;
+  constructor(private readonly redis: Redis, prefix = "reply_bind:") {
     this.prefix = prefix;
   }
 
