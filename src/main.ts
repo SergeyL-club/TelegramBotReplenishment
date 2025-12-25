@@ -25,7 +25,7 @@ const event_adapter = new EventAdapter(reply_adapter);
 
 // timer reply
 import { Timer } from "./core/timer";
-const reply_timer = new Timer(reply_adapter.cleanup_expired.bind(this, event_adapter), 1000);
+const reply_timer = new Timer(reply_adapter.cleanup_expired.bind(reply_adapter, event_adapter), 1000);
 
 // context storage
 import { RedisContextAdapter } from "./core/user_storage.adapter";
@@ -37,11 +37,17 @@ const flow_engine = new FlowEngine(context_adapter);
 
 // ui adapter
 import { UIAdapter } from "./core/ui.adapter";
-const ui_adapter = new UIAdapter(reply_adapter);
+const ui_adapter = new UIAdapter(context_adapter, reply_adapter);
 
 // route controller
 import { RouteController } from "./core/route.controller";
 const route_controller = new RouteController(telegram_adapter, event_adapter, flow_engine, ui_adapter);
+
+// events
+import { use_deal_method_mapper } from "./mappers/deal_method.mapper";
+
+// handlers
+import { use_deal_method_handler } from "./handlers/deal_method.handler";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   reply_timer.stop();
@@ -64,7 +70,7 @@ process.on("uncaughtException", (err) => {
 });
 
 process.on("unhandledRejection", (reason) => {
-  default_logger.error("Unhandled Promise Rejection", { reason }).catch(() => {});
+  default_logger.error("Unhandled Promise Rejection", reason).catch(() => {});
 
   shutdown("CriticalError")
     .then(() => process.exit(1))
@@ -112,6 +118,12 @@ async function main(): Promise<void> {
 
   // event dispath
   route_controller.start();
+
+  // registration events
+  use_deal_method_mapper(event_adapter);
+
+  // registration handlers
+  use_deal_method_handler(flow_engine);
 
   // start timers
   reply_timer.start();
