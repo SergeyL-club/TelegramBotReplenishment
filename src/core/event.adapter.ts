@@ -1,9 +1,24 @@
 import type { ReplyStorageAdapter, ReplyPayload } from "./reply_storage.adapter";
 import type { telegram_payload } from "./telegram.adapter";
 
-export type DomainBase = { user_id: number; chat_id: number };
+export type DomainBase = {
+  user_id: number;
+  chat_id: number;
+};
 
-export type DomainEvent = ({ type: "reply_expired"; message_id: number } | { type: "unknown"; payload: unknown }) & DomainBase;
+export interface DomainEventMap {
+  reply_expired: {
+    type: "reply_expired";
+    message_id: number;
+  };
+
+  unknown: {
+    type: "unknown";
+    payload: unknown;
+  };
+}
+
+export type DomainEvent<K extends keyof DomainEventMap = keyof DomainEventMap> = { type: K } & DomainEventMap[K] & DomainBase;
 
 export type Payload = (telegram_payload | ReplyPayload) & { bind_data?: unknown };
 
