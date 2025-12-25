@@ -9,7 +9,6 @@ declare module "../core/event.adapter" {
 
 export function use_deal_create_mapper(event_adapter: EventAdapter): void {
   event_adapter.register_mapper((payload) => {
-    console.log(payload);
     if (payload.type !== "message" || !("text" in payload.message) || !payload.message.text.startsWith("Пополнение")) return null;
     const event: DomainEvent<"deal_create"> = {
       type: "deal_create",
@@ -17,7 +16,6 @@ export function use_deal_create_mapper(event_adapter: EventAdapter): void {
       user_id: payload.message.from!.id,
       delete_id: payload.message.message_id,
     };
-    console.log(2);
     return event;
   });
 
