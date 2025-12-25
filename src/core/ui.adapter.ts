@@ -25,13 +25,14 @@ export class UIAdapter {
   public async render(ctx: Context, instructions: UIInstruction | UIInstruction[]): Promise<void> {
     instructions = instructions instanceof Array ? instructions : [instructions];
     for (const instruction of instructions) {
+      console.log(instruction);
       let sent_message;
       if (instruction.answerCB) await ctx.answerCbQuery();
       if (instruction.edit_message_id) {
         sent_message = await ctx.editMessageText(instruction.text ?? "", {
           reply_markup: { inline_keyboard: instruction.inline_keyboard ?? [] },
         });
-      } else {
+      } else if (instruction.text) {
         sent_message = await ctx.reply(instruction.text ?? "", {
           reply_markup: {
             inline_keyboard: instruction.inline_keyboard ?? [],
@@ -43,11 +44,11 @@ export class UIAdapter {
         if (instruction.bind_data) {
           await this.reply_adapter.bind(ctx.chat!.id, ctx.from!.id, sent_message.message_id, instruction.bind_data, instruction.delete_at);
         }
+      }
 
-        // если есть context значит надо менять его
-        if (instruction.context) {
-          await this.context_adapter.set(instruction.context.user_id ?? ctx.from!.id, instruction.context.data);
-        }
+      // если есть context значит надо менять его
+      if (instruction.context) {
+        await this.context_adapter.set(instruction.context.user_id ?? ctx.from!.id, instruction.context.data);
       }
     }
   }
