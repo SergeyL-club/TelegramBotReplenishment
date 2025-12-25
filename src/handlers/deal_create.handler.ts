@@ -19,6 +19,9 @@ export function use_deal_create_handler(flow_engine: FlowEngine, deal_manager: D
           ],
           [{ text: "Подтвердить", callback_data: `callback_deal_sented:${deal.id}` }],
         ],
+        post: async ({ message_id }) => {
+          await deal_manager.set_client_messages(deal.id, [message_id]);
+        },
       },
     };
   });

@@ -32,10 +32,12 @@ export class DealManager {
   ) {
     this.path_id = `${db_name}:deal:last_id`;
     this.deal_path = (id): string => `${db_name}:deal:${id}`;
+    this.client_path = (id): string => `${db_name}:deal:client:${id}:deals`
   }
 
   private path_id;
   private deal_path: (id: number) => string;
+  private client_path: (id: number) => string;
 
   private async last_id(): Promise<number> {
     const id = await this.db_api.incr(this.path_id);
@@ -47,12 +49,21 @@ export class DealManager {
     return data ? (JSON.parse(data) as DealData) : null;
   }
   private async save_deal(deal: DealData): Promise<void> {
+    await this.db_api.sadd(this.client_path(deal.client_id), deal.id);
     await this.db_api.set(this.deal_path(deal.id), JSON.stringify(deal));
   }
   public async create_deal(client_id: number): Promise<DealData> {
     const deal: DealData = { id: await this.last_id(), client_id, created_at: Date.now(), updates: {} };
     await this.save_deal(deal);
     return deal;
+  }
+  public async set_client_messages(deal_id: number, ids: number[]): Promise<void> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    deal.messages ??= {};
+    deal.messages.client ??= [];
+    deal.messages.client.push(...ids);
+    await this.save_deal(deal);
   }
   public async set_amount(deal_id: number, amount: number): Promise<void> {
     const deal = await this.get_deal(deal_id);
@@ -83,6 +94,12 @@ export class DealManager {
     deal.updates.details ??= [];
     deal.updates.details.push({ detais: details, time });
     await this.save_deal(deal);
+  }
+  public async get_deal_client_messages(deal_id: number): Promise<number[]> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    if (deal.messages && deal.messages.client) return deal.messages.client;
+    return [];
   }
   public async get_info(deal_id: number): Promise<string> {
     const deal = await this.get_deal(deal_id);
