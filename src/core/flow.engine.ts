@@ -9,8 +9,7 @@ export type ContextBind = { bind: (context: Record<string, unknown> & ContextBas
 
 export type FlowHandler<E extends DomainEvent = DomainEvent> = (
   event: Omit<E, keyof DomainBase>,
-  context: Record<string, unknown> & ContextBase,
-  functions: ContextBind
+  context: Record<string, unknown> & ContextBase
 ) => Promise<void> | void | Promise<ReturnUIInstruction> | ReturnUIInstruction;
 
 export class FlowEngine {
@@ -31,9 +30,7 @@ export class FlowEngine {
 
     let result = null;
     if (handler) {
-      result = await handler(event, context as Record<string, unknown> & ContextBase, {
-        bind: async (context) => await this.context_adapter.set(user_id, context),
-      });
+      result = await handler(event, context as Record<string, unknown> & ContextBase);
       await this.context_adapter.set(user_id, context);
     }
 
