@@ -32,7 +32,7 @@ export class DealManager {
   ) {
     this.path_id = `${db_name}:deal:last_id`;
     this.deal_path = (id): string => `${db_name}:deal:${id}`;
-    this.client_path = (id): string => `${db_name}:deal:client:${id}:deals`
+    this.client_path = (id): string => `${db_name}:deal:client:${id}:deals`;
   }
 
   private path_id;

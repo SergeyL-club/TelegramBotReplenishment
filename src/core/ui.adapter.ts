@@ -39,16 +39,16 @@ export function deep_merge(a: Record<string, unknown>, b: Record<string, unknown
   return result;
 }
 
-function set_by_path(obj: Record<string, any>, path: (string | number)[], value: any) {
-  let current = obj;
-  for (let i = 0; i < path.length - 1; i++) {
-    const key = path[i];
-    if (key === undefined) continue;
-    if (!(key in current)) current[key] = {}; // создаём объект, если нет
-    current = current[key];
-  }
-  current[path[path.length - 1]!] = value;
-}
+// function set_by_path(obj: Record<string, any>, path: (string | number)[], value: any) {
+//   let current = obj;
+//   for (let i = 0; i < path.length - 1; i++) {
+//     const key = path[i];
+//     if (key === undefined) continue;
+//     if (!(key in current)) current[key] = {}; // создаём объект, если нет
+//     current = current[key];
+//   }
+//   current[path[path.length - 1]!] = value;
+// }
 
 export type UIInstruction = {
   answerCB?: boolean;
