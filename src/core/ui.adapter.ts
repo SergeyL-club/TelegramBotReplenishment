@@ -3,6 +3,7 @@ import type { ReplyStorageAdapter } from "./reply_storage.adapter";
 import type { ContextStorageAdapter } from "./user_storage.adapter";
 
 export type UIInstruction = {
+  answerCB?: true;
   text?: string;
   inline_keyboard?: { text: string; callback_data: string }[][];
   force_reply?: boolean;
@@ -25,6 +26,7 @@ export class UIAdapter {
     instructions = instructions instanceof Array ? instructions : [instructions];
     for (const instruction of instructions) {
       let sent_message;
+      if (instruction.answerCB) await ctx.answerCbQuery();
       if (instruction.edit_message_id) {
         sent_message = await ctx.editMessageText(instruction.text ?? "", {
           reply_markup: { inline_keyboard: instruction.inline_keyboard ?? [] },
