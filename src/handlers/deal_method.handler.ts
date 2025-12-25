@@ -2,7 +2,7 @@ import type { FlowEngine } from "../core/flow.engine";
 import { default_logger } from "../core/logger";
 
 export function use_deal_method_handler(flow_engine: FlowEngine): void {
-  flow_engine.register_handler("open_deal_menu_methods", async (event, context) => {
+  flow_engine.register_handler("open_deal_menu_methods", async (event) => {
     return {
       on_exit: {
         edit_message_id: event.deal_id,
