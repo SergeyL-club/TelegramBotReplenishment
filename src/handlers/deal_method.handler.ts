@@ -33,10 +33,12 @@ export function use_deal_method_handler(flow_engine: FlowEngine): void {
           answerCB: true,
           edit_message_id: event.edit_id,
           text: `Выбран метод оплаты ${event.method_name}`,
+          inline_keyboard: [[{ text: "Задать сумму пополнения", callback_data: `callback_menu_reply_deal_sum:${id}:${event.edit_id}` }]],
         },
         {
+          modify_context: true,
           context: {
-            data: { pre_deals },
+            data: { pre_deals: { [id]: { method_name: event.method_name } } },
           },
         },
       ],

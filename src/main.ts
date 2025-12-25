@@ -45,9 +45,11 @@ const route_controller = new RouteController(telegram_adapter, event_adapter, fl
 
 // events
 import { use_deal_method_mapper } from "./mappers/deal_method.mapper";
+import { use_deal_sum_mapper } from "./mappers/deal_sum.mapper";
 
 // handlers
 import { use_deal_method_handler } from "./handlers/deal_method.handler";
+import { use_deal_sum_handler } from "./handlers/deal_sum.handler";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   reply_timer.stop();
@@ -121,9 +123,11 @@ async function main(): Promise<void> {
 
   // registration events
   use_deal_method_mapper(event_adapter);
+  use_deal_sum_mapper(event_adapter);
 
   // registration handlers
   use_deal_method_handler(flow_engine);
+  use_deal_sum_handler(flow_engine);
 
   // start timers
   reply_timer.start();
