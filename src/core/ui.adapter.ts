@@ -2,7 +2,7 @@ import type { Context } from "telegraf";
 import type { ReplyStorageAdapter } from "./reply_storage.adapter";
 import type { ContextStorageAdapter } from "./user_storage.adapter";
 
-function deep_merge(a: Record<string, unknown>, b: Record<string, unknown>, strict = false): Record<string, unknown> {
+export function deep_merge(a: Record<string, unknown>, b: Record<string, unknown>, strict = false): Record<string, unknown> {
   const result = { ...a };
 
   for (const key in b) {
@@ -51,21 +51,17 @@ function set_by_path(obj: Record<string, any>, path: (string | number)[], value:
 }
 
 export type UIInstruction = {
-  answerCB?: true;
+  answerCB?: boolean;
   text?: string;
   inline_keyboard?: { text: string; callback_data: string }[][];
-  force_reply?: true;
+  force_reply?: boolean;
   edit_message_id?: number;
-  bind_id?: true;
   bind_data?: unknown; // данные для привязки ответа
   delete_at?: number; // timestamp, когда сообщение можно удалить
-  modify_context?: true;
-  context?: {
-    strict?: true;
-    bind_id?: (string | number)[];
-    user_id?: number;
-    data: Record<string, unknown>;
-  };
+  post?: <T extends Record<string, unknown>>(data: {
+    message_id: number;
+    context: T;
+  }) => (Promise<void> | void) | (Promise<{ context: T }> | { context: T });
 };
 
 export class UIAdapter {
@@ -100,19 +96,27 @@ export class UIAdapter {
       // если есть bind_data — сохраняем привязку
       if (instruction.bind_data) {
         const message_id = ((sent_message as any)?.message_id as number) ?? instruction.edit_message_id!;
-        const bind_data = instruction.bind_id ? { ...instruction.bind_data, bind_id: message_id } : instruction.bind_data;
+        const bind_data = { ...instruction.bind_data, bind_id: message_id };
         await this.reply_adapter.bind(ctx.chat!.id, ctx.from!.id, message_id, bind_data, instruction.delete_at);
       }
 
       // если есть context значит надо менять его
-      if (instruction.context) {
+      // if (instruction.context) {
+      //   const message_id = (sent_message as any)?.message_id ?? instruction.edit_message_id!;
+      //   const memory = (await this.context_adapter.get(instruction.context.user_id ?? ctx.from!.id)) ?? {};
+      //   if (instruction.context.bind_id) set_by_path(data, instruction.context.bind_id, message_id);
+      //   await this.context_adapter.set(instruction.context.user_id ?? ctx.from!.id, data);
+      // }
+
+      // post обработка
+      if (instruction.post) {
         const message_id = (sent_message as any)?.message_id ?? instruction.edit_message_id!;
-        const memory = (await this.context_adapter.get(instruction.context.user_id ?? ctx.from!.id)) ?? {};
-        const data = instruction.modify_context
-          ? deep_merge(memory, instruction.context.data, instruction.context.strict)
-          : instruction.context.data;
-        if (instruction.context.bind_id) set_by_path(data, instruction.context.bind_id, message_id);
-        await this.context_adapter.set(instruction.context.user_id ?? ctx.from!.id, data);
+        let memory = (await this.context_adapter.get(ctx.from!.id)) ?? {};
+        const data = await instruction.post({ message_id, context: memory });
+        if (data && "context" in data) {
+          memory = (await this.context_adapter.get(ctx.from!.id)) ?? {};
+          await this.context_adapter.set(ctx.from!.id, deep_merge(memory, data.context));
+        }
       }
     }
   }
