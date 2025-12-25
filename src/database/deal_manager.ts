@@ -1,281 +1,118 @@
 import type Redis from "ioredis";
 
-export enum States {
-  OPEN = "open",
-  STEP_1 = "step1",
-  STEP_2 = "step2",
-  FINISH = "finish",
-  CLOSE = "close",
-}
-export type StatesValue = (typeof States)[keyof typeof States];
-
-export interface DealData {
+interface DealData {
   id: number;
-  state: StatesValue;
+  amount?: number;
+  method_name?: string;
+  details?: string;
   client_id: number;
-  trader_id: number;
-  details: string;
-  create_at: number;
-  update_at?: {
-    finish_at?: number;
-    close_at?: number;
-    step_1_at?: number;
-    step_2_at?: number;
+  trader_id?: number;
+  messages?: {
+    client?: number[]; // Список сообщений которые нужно обновлять по сделки
+    trader?: number[]; // список по сделки у trader
+    traders?: number[]; // Все рассылки traders по сделке
+  };
+  created_at: number;
+  updates?: {
+    method_name?: { method_name: string; time: number }[]; // История обновления метода оплаты
+    amount?: { amount: number; time: number }[]; // История обновления суммы
+    details?: { detais: string; time: number }[]; // История обновления суммы
+    sented_at?: number;
+    trader_at?: number; // когда принял заявку trader
+    accepted_at?: number; // Когда client подтвердил пополнение
+    confirmed_at?: number; // Когда trader подтвердил пополнение
+    close_at?: number; // Закрылась сделка из-за timeout или других причин
   };
 }
 
 export class DealManager {
-  public constructor(
+  constructor(
     private db_api: Redis,
     db_name = "tg_trader"
   ) {
-    this.deal_ids = `${db_name}:deals:ids`;
-    this.deal_states = `${db_name}:deals:states`;
-    this.deal_details = `${db_name}:deals:details`;
-    this.deal_method_names = `${db_name}:deals:method:names`;
-    this.deal_sums = `${db_name}:deals:sums`;
-    this.deal_creation_times = `${db_name}:deals:creation_times`;
-
-    this.method_names = `${db_name}:method:names`;
-
-    this.deal_s1_ids = `${db_name}:deals:s1:ids`;
-    this.deal_s1_creation_times = `${db_name}:deals:s1:creation_times`;
-
-    this.deal_s2_ids = `${db_name}:deals:s2:ids`;
-    this.deal_s2_creation_times = `${db_name}:deals:s2:creation_times`;
-
-    this.deal_close_ids = `${db_name}:deals:close:ids`;
-    this.deal_close_creation_times = `${db_name}:deals:close:creation_times`;
-
-    this.deal_finish_ids = `${db_name}:deals:finish:ids`;
-    this.deal_finish_creation_times = `${db_name}:deals:finish:creation_times`;
-
-    this.deal_clients = `${db_name}:deals:clients`;
-    this.deal_client_messages = (id): string => `${db_name}:deals:clients:messages:${id}`;
-    this.deal_traders = `${db_name}:deals:traders`;
-    this.deal_trader_messages = (id): string => `${db_name}:deals:traders:messages:${id}`;
-    this.last_id = `${db_name}:deals:last_id`;
+    this.path_id = `${db_name}:deal:last_id`;
+    this.deal_path = (id): string => `${db_name}:deal:${id}`;
   }
 
-  private last_id;
-  private deal_ids;
-  private deal_states;
-  private deal_details;
-  private deal_method_names;
-  private deal_sums;
-  private deal_clients;
-  private deal_client_messages: (id: number) => string;
-  private deal_traders;
-  private deal_trader_messages: (id: number) => string;
-  private deal_creation_times;
+  private path_id;
+  private deal_path: (id: number) => string;
 
-  // methods
-  private method_names;
-
-  // step 1
-  private deal_s1_ids;
-  private deal_s1_creation_times;
-
-  // step 2
-  private deal_s2_ids;
-  private deal_s2_creation_times;
-
-  // close
-  private deal_close_ids;
-  private deal_close_creation_times;
-
-  // finish
-  private deal_finish_ids;
-  private deal_finish_creation_times;
-
-  // Генерация идентификатора
-  private async generation_id(): Promise<number> {
-    return await this.db_api.incr(this.last_id);
+  private async last_id(): Promise<number> {
+    const id = await this.db_api.incr(this.path_id);
+    return id <= 0 ? await this.db_api.incr(this.path_id) : id;
   }
 
-  // Проверка наличие сделки
-  public async verification_by_deal_id(deal_id: number): Promise<boolean> {
-    return (await this.db_api.sismember(this.deal_ids, deal_id.toString())) > 0;
+  private async get_deal(deal_id: number): Promise<DealData | null> {
+    const data = await this.db_api.get(this.deal_path(deal_id));
+    return data ? (JSON.parse(data) as DealData) : null;
   }
-
-  // Проверка наличия метода оплаты
-  public async verification_by_method_name(method_name: string): Promise<boolean> {
-    return (await this.db_api.sismember(this.method_names, method_name.toString())) > 0;
+  private async save_deal(deal: DealData): Promise<void> {
+    await this.db_api.set(this.deal_path(deal.id), JSON.stringify(deal));
   }
-
-  // Получения списком сделок
-  public async deals_all(): Promise<number[] | null> {
-    const data = await this.db_api.smembers(this.deal_ids);
-    return data.length > 0 ? data.map(Number) : null;
-  }
-  public async deals_step(step: 1 | 2): Promise<number[] | null> {
-    const path = step === 1 ? this.deal_s1_ids : this.deal_s2_ids;
-    const data = await this.db_api.smembers(path);
-    return data.length > 0 ? data.map(Number) : null;
-  }
-  public async deals_close(): Promise<number[] | null> {
-    const data = await this.db_api.smembers(this.deal_close_ids);
-    return data.length > 0 ? data.map(Number) : null;
-  }
-  public async deals_finish(): Promise<number[] | null> {
-    const data = await this.db_api.smembers(this.deal_finish_ids);
-    return data.length > 0 ? data.map(Number) : null;
-  }
-
-  // Получения списка методов оплаты
-  public async methods_names_all(): Promise<string[] | null> {
-    const data = await this.db_api.smembers(this.method_names);
-    return data.length > 0 ? data : null;
-  }
-
-  // Получение данных о сделке
-  public async state_by_deal_id(deal_id: number): Promise<StatesValue | null> {
-    return (await this.db_api.hget(this.deal_states, deal_id.toString())) as StatesValue | null;
-  }
-  public async details_by_deal_id(deal_id: number): Promise<string | null> {
-    return await this.db_api.hget(this.deal_details, deal_id.toString());
-  }
-  public async method_name_by_deal_id(deal_id: number): Promise<string | null> {
-    return await this.db_api.hget(this.deal_method_names, deal_id.toString());
-  }
-  public async creation_time_by_deal_id(deal_id: number): Promise<number | null> {
-    const data = await this.db_api.hget(this.deal_creation_times, deal_id.toString());
-    return data !== null ? Number(data) : null;
-  }
-  public async close_time_by_deal_id(deal_id: number): Promise<number | null> {
-    const data = await this.db_api.hget(this.deal_close_creation_times, deal_id.toString());
-    return data !== null ? Number(data) : null;
-  }
-  public async finish_time_by_deal_id(deal_id: number): Promise<number | null> {
-    const data = await this.db_api.hget(this.deal_finish_creation_times, deal_id.toString());
-    return data !== null ? Number(data) : null;
-  }
-  public async step_1_time_by_deal_id(deal_id: number): Promise<number | null> {
-    const data = await this.db_api.hget(this.deal_s1_creation_times, deal_id.toString());
-    return data !== null ? Number(data) : null;
-  }
-  public async step_2_time_by_deal_id(deal_id: number): Promise<number | null> {
-    const data = await this.db_api.hget(this.deal_s2_creation_times, deal_id.toString());
-    return data !== null ? Number(data) : null;
-  }
-  public async client_by_deal_id(deal_id: number): Promise<number | null> {
-    const data = await this.db_api.hget(this.deal_clients, deal_id.toString());
-    return data !== null ? Number(data) : null;
-  }
-  public async trader_by_deal_id(deal_id: number): Promise<number | null> {
-    const data = await this.db_api.hget(this.deal_traders, deal_id.toString());
-    return data !== null ? Number(data) : null;
-  }
-
-  /// Функции метода оплаты
-  public async create_method(method_name: string): Promise<boolean> {
-    if (await this.verification_by_method_name(method_name)) return false;
-    const multi = this.db_api.multi();
-
-    multi.sadd(this.method_names, method_name);
-
-    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
-  }
-  public async delete_method(method_name: string): Promise<boolean> {
-    if (!(await this.verification_by_method_name(method_name))) return false;
-    const multi = this.db_api.multi();
-
-    multi.srem(this.method_names, method_name);
-
-    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
-  }
-
-  // Функции сделки
-  public async create_deal(
-    client: { id: number; messages: number[] },
-    trader: { id: number; messages: number[] },
-    method_name: string,
-    sum: number,
-    details: string,
-    create_at = Date.now()
-  ): Promise<number | false> {
-    if (!(await this.verification_by_method_name(method_name))) return false;
-    const deal_id = await this.generation_id();
-    const multi = this.db_api.multi();
-
-    multi.sadd(this.deal_ids, deal_id.toString());
-    multi.hset(this.deal_clients, deal_id.toString(), client.id.toString());
-    multi.sadd(this.deal_client_messages(deal_id), client.messages);
-    multi.hset(this.deal_traders, deal_id.toString(), trader.id.toString());
-    multi.hset(this.deal_trader_messages(deal_id), trader.messages);
-    multi.hset(this.deal_states, deal_id.toString(), States.OPEN);
-    multi.hset(this.deal_details, deal_id.toString(), details);
-    multi.hset(this.deal_method_names, deal_id.toString(), method_name);
-    multi.hset(this.deal_sums, deal_id.toString(), sum.toString());
-    multi.hset(this.deal_creation_times, deal_id.toString(), create_at.toString());
-
-    return (await multi.exec())?.every((value) => value[0] === null) ? deal_id : false;
-  }
-  public async close_deal(deal_id: number, close_at = Date.now()): Promise<boolean> {
-    if (!(await this.verification_by_deal_id(deal_id))) return false;
-    const multi = this.db_api.multi();
-
-    multi.sadd(this.deal_close_ids, deal_id.toString());
-    multi.hset(this.deal_states, deal_id.toString(), States.CLOSE);
-    multi.hset(this.deal_close_creation_times, deal_id.toString(), close_at.toString());
-
-    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
-  }
-  public async step_1(deal_id: number, update_at = Date.now()): Promise<boolean> {
-    if (!(await this.verification_by_deal_id(deal_id))) return false;
-    const multi = this.db_api.multi();
-
-    multi.sadd(this.deal_s1_ids, deal_id.toString());
-    multi.hset(this.deal_states, deal_id.toString(), States.STEP_1);
-    multi.hset(this.deal_s1_creation_times, deal_id.toString(), update_at.toString());
-
-    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
-  }
-  public async step_2(deal_id: number, update_at = Date.now()): Promise<boolean> {
-    if (!(await this.verification_by_deal_id(deal_id))) return false;
-    const multi = this.db_api.multi();
-
-    multi.sadd(this.deal_s2_ids, deal_id.toString());
-    multi.hset(this.deal_states, deal_id.toString(), States.STEP_2);
-    multi.hset(this.deal_s2_creation_times, deal_id.toString(), update_at.toString());
-
-    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
-  }
-  public async finish_deal(deal_id: number, update_at = Date.now()): Promise<boolean> {
-    if (!(await this.verification_by_deal_id(deal_id))) return false;
-    const multi = this.db_api.multi();
-
-    multi.sadd(this.deal_finish_ids, deal_id.toString());
-    multi.hset(this.deal_states, deal_id.toString(), States.FINISH);
-    multi.hset(this.deal_finish_creation_times, deal_id.toString(), update_at.toString());
-
-    return (await multi.exec())?.every((value) => value[0] === null) ?? false;
-  }
-
-  // Весь блок сделки
-  public async data_by_deal_id(deal_id: number): Promise<DealData | null> {
-    if (!(await this.verification_by_deal_id(deal_id))) return null;
-    const deal: DealData = {} as DealData;
-    const [state, details, client_id, trader_id, create_at] = await Promise.all([
-      this.state_by_deal_id(deal_id),
-      this.details_by_deal_id(deal_id),
-      this.client_by_deal_id(deal_id),
-      this.trader_by_deal_id(deal_id),
-      this.creation_time_by_deal_id(deal_id),
-    ]);
-
-    deal.id = deal_id;
-    deal.state = state!;
-    deal.details = details!;
-    deal.client_id = client_id!;
-    deal.trader_id = trader_id!;
-    deal.create_at = create_at!;
-
-    if (deal.state === States.STEP_1) deal.update_at = { ...deal.update_at, step_1_at: (await this.step_1_time_by_deal_id(deal_id))! };
-    if (deal.state === States.STEP_2) deal.update_at = { ...deal.update_at, step_2_at: (await this.step_2_time_by_deal_id(deal_id))! };
-    if (deal.state === States.CLOSE) deal.update_at = { ...deal.update_at, close_at: (await this.close_time_by_deal_id(deal_id))! };
-    if (deal.state === States.FINISH) deal.update_at = { ...deal.update_at, finish_at: (await this.finish_time_by_deal_id(deal_id))! };
-
+  public async create_deal(client_id: number): Promise<DealData> {
+    const deal: DealData = { id: await this.last_id(), client_id, created_at: Date.now(), updates: {} };
+    await this.save_deal(deal);
     return deal;
+  }
+  public async set_amount(deal_id: number, amount: number): Promise<void> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    deal.amount = amount;
+    const time = Date.now();
+    deal.updates ??= {};
+    deal.updates.amount ??= [];
+    deal.updates.amount.push({ amount, time });
+    await this.save_deal(deal);
+  }
+  public async set_method(deal_id: number, method_name: string): Promise<void> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    deal.method_name = method_name;
+    const time = Date.now();
+    deal.updates ??= {};
+    deal.updates.method_name ??= [];
+    deal.updates.method_name.push({ method_name, time });
+    await this.save_deal(deal);
+  }
+  public async set_details(deal_id: number, details: string): Promise<void> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    deal.details = details;
+    const time = Date.now();
+    deal.updates ??= {};
+    deal.updates.details ??= [];
+    deal.updates.details.push({ detais: details, time });
+    await this.save_deal(deal);
+  }
+  public async get_info(deal_id: number): Promise<string> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    const logs: string[] = [];
+    logs.push(`[${new Date(deal.created_at).toLocaleString()}] Создана сделка #${deal.id}`);
+    if (deal.updates?.amount) {
+      for (const a of deal.updates.amount) {
+        logs.push(`[${new Date(a.time).toLocaleString()}] Задана сумма ${a.amount}`);
+      }
+    }
+    if (deal.updates?.method_name) {
+      for (const m of deal.updates.method_name) {
+        logs.push(`[${new Date(m.time).toLocaleString()}] Задан метод оплаты ${m.method_name}`);
+      }
+    }
+    if (deal.updates?.details) {
+      for (const d of deal.updates.details) {
+        logs.push(`[${new Date(d.time).toLocaleString()}] Заданы реквизиты ${d.detais}`);
+      }
+    }
+    if (deal.updates?.accepted_at) {
+      logs.push(`[${new Date(deal.updates.accepted_at).toLocaleString()}] Клиент подтвердил пополнение`);
+    }
+    if (deal.updates?.confirmed_at) {
+      logs.push(`[${new Date(deal.updates.confirmed_at).toLocaleString()}] Трейдер подтвердил пополнение`);
+    }
+    if (deal.updates?.close_at) {
+      logs.push(`[${new Date(deal.updates.close_at).toLocaleString()}] Сделка закрыта`);
+    }
+    return `Сделка #${deal.id}\nКлиент: ${deal.client_id}\nТрейдер: ${deal.trader_id ?? "не назначен"}\nМетод оплаты: ${deal.method_name ?? "не выбран"}\nСумма: ${deal.amount ?? "не задана"}\nДетали: ${deal.details ?? "нет"}\nЛоги:\n${logs.join("\n")}`;
   }
 }

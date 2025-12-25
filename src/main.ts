@@ -7,6 +7,10 @@ import { default_logger } from "./core/logger";
 import Redis from "ioredis";
 const redis_database = new Redis(process.env.REDIS_URL ?? "redis://127.0.0.1:6379");
 
+// DealManager
+import { DealManager } from "./database/deal_manager";
+const deal_manager = new DealManager(redis_database);
+
 // telegraf
 import { Telegraf } from "telegraf";
 const telegraf = new Telegraf(process.env.BOT_TOKEN ?? "");
@@ -44,12 +48,10 @@ import { RouteController } from "./core/route.controller";
 const route_controller = new RouteController(telegram_adapter, event_adapter, flow_engine, ui_adapter);
 
 // events
-import { use_deal_method_mapper } from "./mappers/deal_method.mapper";
-import { use_deal_sum_mapper } from "./mappers/deal_sum.mapper";
+import { use_deal_create_mapper } from "./mappers/deal_create.mapper";
 
 // handlers
-import { use_deal_method_handler } from "./handlers/deal_method.handler";
-import { use_deal_sum_handler } from "./handlers/deal_sum.handler";
+import { use_deal_create_handler } from "./handlers/deal_create.handler";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   reply_timer.stop();
@@ -122,12 +124,10 @@ async function main(): Promise<void> {
   route_controller.start();
 
   // registration events
-  use_deal_method_mapper(event_adapter);
-  use_deal_sum_mapper(event_adapter);
+  use_deal_create_mapper(event_adapter);
 
   // registration handlers
-  use_deal_method_handler(flow_engine);
-  use_deal_sum_handler(flow_engine);
+  use_deal_create_handler(flow_engine, deal_manager);
 
   // start timers
   reply_timer.start();
