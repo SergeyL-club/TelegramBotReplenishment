@@ -56,6 +56,7 @@ export type UIInstruction = {
   inline_keyboard?: { text: string; callback_data: string }[][];
   force_reply?: boolean;
   edit_message_id?: number;
+  user_id?: number;
   bind_data?: unknown; // данные для привязки ответа
   delete_at?: number; // timestamp, когда сообщение можно удалить
   post?: <T extends Record<string, unknown>>(data: {
@@ -77,15 +78,25 @@ export class UIAdapter {
       let sent_message;
       if (instruction.answerCB) await ctx.answerCbQuery();
       if (instruction.edit_message_id && instruction.text) {
-        sent_message = await ctx.telegram.editMessageText(
-          ctx.chat!.id,
-          instruction.edit_message_id,
-          undefined,
-          instruction.text, // text ОБЯЗАТЕЛЕН
-          instruction.inline_keyboard ? { reply_markup: { inline_keyboard: instruction.inline_keyboard } } : undefined
-        );
+        const { chat_id } = instruction.user_id
+          ? (((await this.context_adapter.get(instruction.user_id)) as { chat_id: number } | null) ?? { chat_id: ctx.chat!.id })
+          : { chat_id: ctx.chat!.id };
+        try {
+          sent_message = await ctx.telegram.editMessageText(
+            chat_id,
+            instruction.edit_message_id,
+            undefined,
+            instruction.text, // text ОБЯЗАТЕЛЕН
+            instruction.inline_keyboard ? { reply_markup: { inline_keyboard: instruction.inline_keyboard } } : undefined
+          );
+        } catch (e: unknown) {
+          if (e instanceof Error && e.message.includes("message is not modified")) sent_message = instruction.edit_message_id;
+        }
       } else if (instruction.text) {
-        sent_message = await ctx.reply(instruction.text ?? "", {
+        const { chat_id } = instruction.user_id
+          ? (((await this.context_adapter.get(instruction.user_id)) as { chat_id: number } | null) ?? { chat_id: ctx.chat!.id })
+          : { chat_id: ctx.chat!.id };
+        sent_message = await ctx.telegram.sendMessage(chat_id, instruction.text ?? "", {
           reply_markup: {
             inline_keyboard: instruction.inline_keyboard ?? [],
             ...(instruction.force_reply ? { force_reply: true } : {}),
