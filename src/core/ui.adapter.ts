@@ -73,7 +73,7 @@ export class UIAdapter {
   public async render(ctx: Context, instructions: UIInstruction | UIInstruction[]): Promise<void> {
     instructions = instructions instanceof Array ? instructions : [instructions];
     for (const instruction of instructions) {
-      console.log(instruction);
+      // console.log(instruction);
       let sent_message;
       if (instruction.answerCB) await ctx.answerCbQuery();
       if (instruction.edit_message_id && instruction.text) {
@@ -123,9 +123,10 @@ export class UIAdapter {
 
   public async cleanup(ctx: Context, instructions: UIInstruction | UIInstruction[]): Promise<void> {
     instructions = instructions instanceof Array ? instructions : [instructions];
+    // console.log(instructions);
     for (const instruction of instructions)
       if (instruction.edit_message_id) {
-        await ctx.deleteMessage(instruction.edit_message_id);
+        await ctx.telegram.deleteMessage(ctx.chat!.id, instruction.edit_message_id);
         const data = await this.reply_adapter.get(ctx.chat!.id, ctx.from!.id, instruction.edit_message_id);
         if (data) await this.reply_adapter.delete(ctx.chat!.id, ctx.from!.id, instruction.edit_message_id);
       }
