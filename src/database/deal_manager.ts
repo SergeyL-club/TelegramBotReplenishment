@@ -44,7 +44,7 @@ export class DealManager {
     return id <= 0 ? await this.db_api.incr(this.path_id) : id;
   }
 
-  private async get_deal(deal_id: number): Promise<DealData | null> {
+  public async get_deal(deal_id: number): Promise<DealData | null> {
     const data = await this.db_api.get(this.deal_path(deal_id));
     return data ? (JSON.parse(data) as DealData) : null;
   }
@@ -63,6 +63,21 @@ export class DealManager {
     deal.messages ??= {};
     deal.messages.client ??= [];
     deal.messages.client.push(...ids);
+    await this.save_deal(deal);
+  }
+  public async set_traders_messages(deal_id: number, ids: number[]): Promise<void> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    deal.messages ??= {};
+    deal.messages.traders ??= [];
+    deal.messages.traders.push(...ids);
+    await this.save_deal(deal);
+  }
+  public async reset_traders_messages(deal_id: number): Promise<void> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    deal.messages ??= {};
+    deal.messages.traders = [];
     await this.save_deal(deal);
   }
   public async set_amount(deal_id: number, amount: number): Promise<void> {
@@ -99,6 +114,12 @@ export class DealManager {
     const deal = await this.get_deal(deal_id);
     if (!deal) throw new Error("Deal not found");
     if (deal.messages && deal.messages.client) return deal.messages.client;
+    return [];
+  }
+  public async get_deal_traders_messages(deal_id: number): Promise<number[]> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    if (deal.messages && deal.messages.traders) return deal.messages.traders;
     return [];
   }
   public async get_info(deal_id: number): Promise<string> {

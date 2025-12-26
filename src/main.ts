@@ -51,11 +51,13 @@ const route_controller = new RouteController(telegram_adapter, event_adapter, fl
 import { use_deal_create_mapper } from "./mappers/deal_create.mapper";
 import { use_deal_menu_methods_mapper } from "./mappers/deal_method.mapper";
 import { use_deal_sum_mapper } from "./mappers/deal_sum.mapper";
+import { use_deal_sented_mapper } from "./mappers/deal_sented.mapper";
 
 // handlers
 import { use_deal_create_handler } from "./handlers/deal_create.handler";
 import { use_deal_menu_method_handler } from "./handlers/deal_method.handler";
 import { use_deal_sum_handler } from "./handlers/deal_sum.handler";
+import { use_deal_sented_handler } from "./handlers/deal_sented.handler";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   reply_timer.stop();
@@ -131,11 +133,13 @@ async function main(): Promise<void> {
   use_deal_create_mapper(event_adapter);
   use_deal_menu_methods_mapper(event_adapter);
   use_deal_sum_mapper(event_adapter);
+  use_deal_sented_mapper(event_adapter);
 
   // registration handlers
   use_deal_create_handler(flow_engine, deal_manager);
   use_deal_menu_method_handler(flow_engine, deal_manager);
   use_deal_sum_handler(flow_engine, deal_manager);
+  use_deal_sented_handler(flow_engine, deal_manager);
 
   // start timers
   reply_timer.start();
