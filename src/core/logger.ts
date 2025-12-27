@@ -132,7 +132,9 @@ export class Logger {
   private format(entry: LogEntry, for_console = false): string {
     let base = `[${entry.timestamp}]:[${for_console ? entry.level : entry.level.toUpperCase()}] ${entry.message.trim()}`;
     if (entry.meta === undefined) return base;
-    base += " " + JSON.stringify(entry.meta, undefined, 0);
+    if (entry.meta instanceof Error) {
+      base += " " + JSON.stringify({ name: entry.meta.name, message: entry.meta.message, stack: entry.meta.stack }, undefined, 0);
+    } else base += " " + JSON.stringify(entry.meta, undefined, 0);
     base = base.replace(/\r?\n/g, " | ");
     base = base.replace(/[\uD800-\uDFFF]/g, "");
     return base;
