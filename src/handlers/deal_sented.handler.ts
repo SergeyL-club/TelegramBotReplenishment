@@ -6,6 +6,8 @@ export function use_deal_sented_handler(flow_engine: FlowEngine, deal_manager: D
   flow_engine.register_handler("callback_deal_sented", async (event) => {
     const update_ids = await deal_manager.get_deal_client_messages(event.deal_id);
 
+    await deal_manager.set_sented(event.deal_id, Date.now());
+
     const deal = await deal_manager.get_deal(event.deal_id);
     const info = await deal_manager.get_info(event.deal_id);
 

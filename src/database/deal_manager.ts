@@ -17,7 +17,7 @@ interface DealData {
     method_name?: { method_name: string; time: number }[]; // История обновления метода оплаты
     amount?: { amount: number; time: number }[]; // История обновления суммы
     details?: { detais: string; time: number }[]; // История обновления суммы
-    sented_at?: number;
+    sented_at?: number[];
     trader_at?: number; // когда принял заявку trader
     accepted_at?: number; // Когда client подтвердил пополнение
     confirmed_at?: number; // Когда trader подтвердил пополнение
@@ -110,6 +110,14 @@ export class DealManager {
     deal.updates.details.push({ detais: details, time });
     await this.save_deal(deal);
   }
+  public async set_sented(deal_id: number, sented_at: number): Promise<void> {
+    const deal = await this.get_deal(deal_id);
+    if (!deal) throw new Error("Deal not found");
+    deal.updates ??= {};
+    deal.updates.sented_at ??= [];
+    deal.updates.sented_at.push(sented_at);
+    await this.save_deal(deal);
+  }
   public async get_deal_client_messages(deal_id: number): Promise<number[]> {
     const deal = await this.get_deal(deal_id);
     if (!deal) throw new Error("Deal not found");
@@ -135,6 +143,11 @@ export class DealManager {
     if (deal.updates?.method_name) {
       for (const m of deal.updates.method_name) {
         logs.push(`[${new Date(m.time).toLocaleString()}] Задан метод оплаты ${m.method_name}`);
+      }
+    }
+    if (deal.updates?.sented_at) {
+      for (const s of deal.updates.sented_at) {
+        logs.push(`[${new Date(s).toLocaleString()}] Отправлен запрос заявки`);
       }
     }
     if (deal.updates?.details) {
