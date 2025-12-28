@@ -5,15 +5,15 @@ type HasCallback = {
   callbackQuery?: unknown;
 };
 
-type CallbackContext = {
+export type CallbackContext = {
   callbackQuery: CallbackQuery;
 };
 
-type DataCallbackContext = {
+export type DataCallbackContext = {
   callbackQuery: CallbackQuery.DataQuery;
 };
 
-type MessageCallbackContext = {
+export type MessageCallbackContext = {
   callbackQuery: { message: NonVoid<CallbackQuery["message"]> };
 };
 

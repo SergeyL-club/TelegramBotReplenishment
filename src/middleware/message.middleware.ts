@@ -5,11 +5,11 @@ type HasMessage = {
   message?: unknown;
 };
 
-type MessageContext = {
+export type MessageContext = {
   message: Message;
 };
 
-type TextMessageContext = {
+export type TextMessageContext = {
   message: Message.TextMessage;
 };
 
