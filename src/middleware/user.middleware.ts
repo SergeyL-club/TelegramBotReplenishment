@@ -1,6 +1,6 @@
 import type { Middleware } from "../core/telegram.composer";
 
-type HasUser = {
+export type HasUser = {
   from?: unknown;
   chat?: unknown;
 };
