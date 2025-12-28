@@ -20,8 +20,8 @@ const telegram_adapter = new DefaultTelegramAdapter();
 import { DefaultUserContextAdapter } from "./databases/user.context";
 const user_context = new DefaultUserContextAdapter(redis_database, "tg_trader:flow_contex:");
 
-// controllers
-import { RoleController } from "./controllers/role.controller";
+// routers
+import * as role_route from "./routers/role.route";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -91,7 +91,8 @@ async function main(): Promise<void> {
     telegram_adapter.handle(ctx);
   });
 
-  telegram_adapter.registration_composer(RoleController.start_registration_role(user_context));
+  // routers
+  role_route.use_start_role(telegram_adapter, user_context);
 
   // launch telegraf
   telegraf.launch(() => {
