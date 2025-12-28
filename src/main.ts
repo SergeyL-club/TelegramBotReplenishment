@@ -16,6 +16,13 @@ const telegraf = new Telegraf<DefaultContext>(process.env.BOT_TOKEN ?? "");
 import { DefaultTelegramAdapter } from "./core/telegram.adapter";
 const telegram_adapter = new DefaultTelegramAdapter();
 
+// user context adapter
+import { DefaultUserContextAdapter } from "./databases/user.context";
+const user_context = new DefaultUserContextAdapter(redis_database, "tg_trader:flow_contex:");
+
+// controllers
+import { RoleController } from "./controllers/role.controller";
+
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
   redis_database.disconnect();
@@ -83,6 +90,8 @@ async function main(): Promise<void> {
   telegraf.use((ctx) => {
     telegram_adapter.handle(ctx);
   });
+
+  telegram_adapter.registration_composer(RoleController.start_registration_role(user_context));
 
   // launch telegraf
   telegraf.launch(() => {
