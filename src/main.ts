@@ -12,6 +12,10 @@ import { Telegraf } from "telegraf";
 import type { DefaultContext } from "./core/telegram.types";
 const telegraf = new Telegraf<DefaultContext>(process.env.BOT_TOKEN ?? "");
 
+// telegram adapter
+import { DefaultTelegramAdapter } from "./core/telegram.adapter";
+const telegram_adapter = new DefaultTelegramAdapter();
+
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
   redis_database.disconnect();
@@ -74,6 +78,11 @@ async function main(): Promise<void> {
   // redis connection is ready
   await wait_for_redis_ready(redis_database);
   await default_logger.info("Redis already");
+
+  // global use
+  telegraf.use((ctx) => {
+    telegram_adapter.handle(ctx);
+  });
 
   // launch telegraf
   telegraf.launch(() => {
