@@ -1,39 +1,44 @@
-export type Middleware<Ctx, Added = {}> = (ctx: Ctx) => Promise<Added | void> | Added | void;
-export type NonVoid<T> = T extends void | undefined ? never : T;
+export type Middleware<Ctx extends object, Added extends object> = (
+  ctx: Ctx
+) => Promise<Added | void> | Added | void;
+
+export type NonVoid<T> = Exclude<T, void | undefined>;
 
 export class Composer<Ctx extends object> {
-  private readonly middlewares: Middleware<any, any>[];
+  private readonly middlewares: Middleware<Ctx, object>[]; // object вместо any
 
-  public constructor(middlewares: Middleware<any, any>[] = []) {
+  public constructor(middlewares: Middleware<Ctx, object>[] = []) {
     this.middlewares = middlewares;
   }
 
-  public use<Added extends object | void>(middleware: Middleware<Ctx, Added>): Composer<Ctx & NonVoid<Added>> {
-    return new Composer<Ctx & NonVoid<Added>>([...this.middlewares, middleware]);
+  public use<Added extends object>(
+    middleware: Middleware<Ctx, Added>
+  ): Composer<Ctx & NonVoid<Added>> {
+    return new Composer<Ctx & NonVoid<Added>>([...this.middlewares, middleware as Middleware<Ctx, object>]);
   }
 
   public handler(fn: (ctx: Ctx) => void | Promise<void>): (ctx: Ctx) => Promise<void> {
     return async (ctx: Ctx) => {
-      const addedObjects: Record<string, any> = {};
+      const addedObjects: Record<string, unknown> = {};
 
-      // Proxy, который перехватывает записи
       const proxyCtx = new Proxy(ctx, {
-        get(target, prop, receiver) {
-          if ((typeof prop === "string" || typeof prop === "number") && prop in addedObjects) {
-            // Если свойство добавлено middleware — берём из addedObjects
-            return addedObjects[prop];
-          }
-          // Иначе берём оригинальное значение из ctx
-          return Reflect.get(target, prop, receiver);
-        },
-        set(_, prop, value) {
+        set(target, prop, value) {
           if (typeof prop === "string" || typeof prop === "number") {
-            addedObjects[prop] = value; // всё новое — в additions
+            addedObjects[prop] = value;
           }
           return true;
         },
+        get(target, prop, receiver) {
+          if ((typeof prop === "string" || typeof prop === "number") && prop in addedObjects) {
+            return addedObjects[prop];
+          }
+          return Reflect.get(target, prop, receiver);
+        },
         has(target, prop) {
-          return typeof prop === "string" || typeof prop === "number" ? prop in addedObjects || prop in target : prop in target;
+          if (typeof prop === "string" || typeof prop === "number") {
+            return prop in addedObjects || prop in target;
+          }
+          return prop in target;
         },
         getOwnPropertyDescriptor(target, prop) {
           if ((typeof prop === "string" || typeof prop === "number") && prop in addedObjects) {
@@ -46,15 +51,13 @@ export class Composer<Ctx extends object> {
         },
       });
 
-      // Выполняем middleware
       for (const mw of this.middlewares) {
         const added = await mw(proxyCtx as Ctx);
         if (added && typeof added === "object") {
           Object.assign(addedObjects, added);
-        } else return;
+        }
       }
 
-      // Передаём handler proxyCtx, где уже видны все additions
       await fn(proxyCtx as Ctx);
     };
   }

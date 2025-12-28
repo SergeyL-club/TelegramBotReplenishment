@@ -9,10 +9,10 @@ export interface TelegramAdapter {
 }
 
 export class DefaultTelegramAdapter implements TelegramAdapter {
-  private readonly handlers: TelegramHandler<any>[] = [];
+  private readonly handlers: TelegramHandler<DefaultContext>[] = [];
 
   public registration_composer<Ctx extends DefaultContext>(handler: TelegramHandler<Ctx>): void {
-    this.handlers.push(handler);
+    this.handlers.push(handler as TelegramHandler<DefaultContext>);
   }
 
   public async handle(ctx: DefaultContext): Promise<void> {
