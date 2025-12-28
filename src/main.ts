@@ -17,8 +17,8 @@ import { DefaultTelegramAdapter } from "./core/telegram.adapter";
 const telegram_adapter = new DefaultTelegramAdapter();
 
 // user context adapter
-import { DefaultUserContextAdapter } from "./databases/user.context";
-const user_context = new DefaultUserContextAdapter(redis_database, "tg_trader:flow_contex:");
+import { RedisUserContextAdapter } from "./databases/user.context";
+const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
 
 // controllers
 import { RoleController } from "./controllers/role.controller";

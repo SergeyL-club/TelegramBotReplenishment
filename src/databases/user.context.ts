@@ -43,7 +43,7 @@ export function deep_merge(a: Record<string, unknown>, b: Record<string, unknown
   return result;
 }
 
-export class DefaultUserContextAdapter implements UserContextAdapter {
+export class RedisUserContextAdapter implements UserContextAdapter {
   private db_api: Redis;
   private prefix: string;
 
