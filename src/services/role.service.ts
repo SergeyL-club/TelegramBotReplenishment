@@ -15,8 +15,9 @@ export class RoleService {
 
   static modify_user_middleware<Type extends UserContext>(user_context: UserContextAdapter): Middleware<Type, RoleContext> {
     return async (ctx) => {
-      const context = await user_context.get<{ roles: string[] }>(ctx.user.id);
-      if (!context || typeof context !== "object" || !context.roles) return;
+      const context = "context" in ctx ? ctx.context : await user_context.get<{ roles: string[] }>(ctx.user.id);
+      if (!context || typeof context !== "object" || !("roles" in context)) return;
+      if (!Array.isArray(context.roles)) return;
       return { user: { roles: context.roles } };
     };
   }
