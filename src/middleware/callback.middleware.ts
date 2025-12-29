@@ -24,9 +24,10 @@ export function callback_middleware<Type extends HasCallback>(): Middleware<Type
   };
 }
 
-export function data_callback_middleware<Type extends CallbackContext>(): Middleware<Type, DataCallbackContext> {
+export function data_callback_middleware<Type extends CallbackContext>(start_with?: string): Middleware<Type, DataCallbackContext> {
   return (ctx) => {
     if (!("data" in ctx.callbackQuery)) return;
+    if (start_with && !ctx.callbackQuery.data.startsWith(start_with)) return;
     return { callbackQuery: ctx.callbackQuery as DataCallbackContext["callbackQuery"] };
   };
 }
