@@ -96,7 +96,7 @@ async function main(): Promise<void> {
   });
 
   // routers
-  telegram_adapter.registration_composer(RoleController.start_registration_role(user_context, role_database));
+  telegram_adapter.registration_composer(RoleController.start_registration_role(user_context));
 
   // launch telegraf
   telegraf.launch(() => {

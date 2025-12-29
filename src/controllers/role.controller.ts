@@ -9,8 +9,7 @@ import { UserService } from "../services/user.service";
 
 export class RoleController {
   static start_registration_role<Type extends DefaultContext>(
-    user_context: UserContextAdapter,
-    role_database: RoleDatabaseAdapter
+    user_context: UserContextAdapter
   ): ReturnType<Composer<Type & StartContext & UserContext>["handler"]> {
     const composer: Composer<Type> = new Composer();
     return composer
@@ -18,7 +17,7 @@ export class RoleController {
       .use(user_middleware())
       .use(UserService.modify_user_middleware(user_context))
       .handler((ctx) => {
-        RoleService.registration_role(role_database, user_context, "client", ctx);
+        RoleService.registration_role(user_context, "client", ctx);
       });
   }
 }

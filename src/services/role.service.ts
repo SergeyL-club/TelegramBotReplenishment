@@ -10,14 +10,8 @@ export type RoleContext = {
 };
 
 export class RoleService {
-  static async registration_role(
-    role_database: RoleDatabaseAdapter,
-    user_context: UserContextAdapter,
-    role_name: string,
-    ctx: UserContext
-  ): Promise<void> {
+  static async registration_role(user_context: UserContextAdapter, role_name: string, ctx: UserContext): Promise<void> {
     await user_context.set(ctx.user.id, { roles: [role_name] });
-    await role_database.add(role_name);
   }
 
   static modify_user_middleware<Type extends UserContext>(user_context: UserContextAdapter): Middleware<Type, RoleContext> {
@@ -28,4 +22,6 @@ export class RoleService {
       return { user: { roles: context.roles } };
     };
   }
+
+  // TODO: дополнить ещё check_role чтобы можно было в middleware записать название роли и только те кто имеет её могли пройти дальше
 }
