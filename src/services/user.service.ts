@@ -9,6 +9,12 @@ export type UserBase = {
 };
 
 export class UserService {
+  static async get_base_info(user_context: UserContextAdapter, user_id: number): Promise<UserBase | null> {
+    const data = await user_context.get<UserBase>(user_id);
+    if (!data || typeof data !== "object" || !("user_id" in data) || !("chat_id" in data) || !("username" in data)) return null;
+    return data as UserBase;
+  }
+
   static modify_user_middleware<Type extends HasUser>(user_context: UserContextAdapter): Middleware<Type, UserContext> {
     return async (ctx) => {
       const msgCtx = "user" in ctx ? (ctx as UserContext) : await user_middleware<Type>()(ctx);
