@@ -20,6 +20,19 @@ export class RoleService {
     await user_context.set(user_id, { roles: [role_name] });
   }
 
+  static async get_roles(user_context: UserContextAdapter, ctx: DefaultContext): Promise<string[] | null> {
+    const user_id = ctx.update.callback_query
+      ? ctx.update.callback_query.from.id
+      : ctx.update.message
+        ? ctx.update.message.from.id
+        : ctx.from?.id;
+    if (typeof user_id !== "number") return null;
+    const data = await user_context.get<{ roles: string[] }>(user_id);
+    if (typeof data !== "object" || data === null || !("roles" in data)) return null;
+    if (!Array.isArray(data.roles)) return null;
+    return data.roles;
+  }
+
   static verification_token(token: string): string | null {
     const keys = Object.keys(role_codes) as (keyof typeof Roles)[];
     let role: string | null = null;
