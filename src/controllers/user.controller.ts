@@ -17,9 +17,7 @@ export class UserController {
     return composer.use(start_middleware()).handler(async (ctx) => {
       await RoleService.registration_role(user_context, Roles.CLIENT, ctx);
       await UserService.save_user_data(user_context, ctx);
-      console.log(1);
       const roles = await RoleService.get_roles(user_context, ctx);
-      console.log(2, roles);
       if (!Array.isArray(roles)) return;
       await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
         scope: { type: "chat", chat_id: ctx.update.message.chat.id },
