@@ -1,6 +1,4 @@
-export type Middleware<Ctx extends object, Added extends object> = (
-  ctx: Ctx
-) => Promise<Added | void> | Added | void;
+export type Middleware<Ctx extends object, Added extends object> = (ctx: Ctx) => Promise<Added | void> | Added | void;
 
 export type NonVoid<T> = Exclude<T, void | undefined>;
 
@@ -11,9 +9,7 @@ export class Composer<Ctx extends object> {
     this.middlewares = middlewares;
   }
 
-  public use<Added extends object>(
-    middleware: Middleware<Ctx, Added>
-  ): Composer<Ctx & NonVoid<Added>> {
+  public use<Added extends object>(middleware: Middleware<Ctx, Added>): Composer<Ctx & NonVoid<Added>> {
     return new Composer<Ctx & NonVoid<Added>>([...this.middlewares, middleware as Middleware<Ctx, object>]);
   }
 
@@ -51,14 +47,18 @@ export class Composer<Ctx extends object> {
         },
       });
 
+      let is = false;
       for (const mw of this.middlewares) {
         const added = await mw(proxyCtx as Ctx);
         if (added && typeof added === "object") {
           Object.assign(addedObjects, added);
+        } else {
+          is = true;
+          break;
         }
       }
 
-      await fn(proxyCtx as Ctx);
+      if (!is) await fn(proxyCtx as Ctx);
     };
   }
 }
