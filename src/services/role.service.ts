@@ -16,7 +16,7 @@ export class RoleService {
       : ctx.update.message
         ? ctx.update.message.from.id
         : ctx.from?.id;
-    if (!user_id) return;
+    if (typeof user_id !== "number") return;
     await user_context.set(user_id, { roles: [role_name] });
   }
 
@@ -39,7 +39,7 @@ export class RoleService {
         : ctx.update.message
           ? ctx.update.message.from.id
           : ctx.from?.id;
-      if (!user_id) return;
+      if (typeof user_id !== "number") return;
       const context = await user_context.get<{ roles: string[] }>(user_id);
       if (!context || typeof context !== "object" || !("roles" in context)) return;
       if (!Array.isArray(context.roles)) return;
