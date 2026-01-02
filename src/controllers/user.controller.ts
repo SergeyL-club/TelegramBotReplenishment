@@ -11,7 +11,6 @@ export class UserController {
   ): ReturnType<Composer<Type & StartContext>["handler"]> {
     const composer = new Composer<Type>();
     return composer.use(start_middleware()).handler(async (ctx) => {
-      console.log(ctx);
       await RoleService.registration_role(user_context, Roles.CLIENT, ctx);
     });
   }
