@@ -1,7 +1,7 @@
-import type { UserContext } from "../middleware/user.middleware";
 import type { UserContextAdapter } from "../databases/user.context";
 import type { Middleware } from "../core/telegram.composer";
-import { Command, commands, fragmentation_menu, type MenuButton, menus, type Roles } from "../databases/role.constants";
+import { role_codes, type Roles } from "../databases/role.constants";
+import { DefaultContext } from "../core/telegram.types";
 
 export type RoleContext = {
   user: {
@@ -10,44 +10,41 @@ export type RoleContext = {
 };
 
 export class RoleService {
-  static async registration_role(user_context: UserContextAdapter, role_name: string, ctx: UserContext): Promise<void> {
-    await user_context.set(ctx.user.id, { roles: [role_name] });
+  static async registration_role(user_context: UserContextAdapter, role_name: string, ctx: DefaultContext): Promise<void> {
+    const user_id = ctx.update.callback_query
+      ? ctx.update.callback_query.from.id
+      : ctx.update.message
+        ? ctx.update.message.from.id
+        : ctx.from?.id;
+    if (!user_id) return;
+    await user_context.set(user_id, { roles: [role_name] });
   }
 
-  static modify_user_middleware<Type extends UserContext>(user_context: UserContextAdapter): Middleware<Type, RoleContext> {
+  static verification_token(token: string): string | null {
+    const keys = Object.keys(role_codes) as (keyof typeof Roles)[];
+    let role: string | null = null;
+    for (const key of keys) {
+      if (role_codes[key] === token) {
+        role = key;
+        break;
+      }
+    }
+    return role;
+  }
+
+  static modify_user_middleware<Type extends DefaultContext>(user_context: UserContextAdapter): Middleware<Type, RoleContext> {
     return async (ctx) => {
-      const context = "roles" in ctx.user ? ctx.user : await user_context.get<{ roles: string[] }>(ctx.user.id);
+      const user_id = ctx.update.callback_query
+        ? ctx.update.callback_query.from.id
+        : ctx.update.message
+          ? ctx.update.message.from.id
+          : ctx.from?.id;
+      if (!user_id) return;
+      const context = await user_context.get<{ roles: string[] }>(user_id);
       if (!context || typeof context !== "object" || !("roles" in context)) return;
       if (!Array.isArray(context.roles)) return;
       return { user: { roles: context.roles } };
     };
-  }
-
-  static async get_menu_command(user_context: UserContextAdapter, user_id: number): Promise<string[][]> {
-    const data = await user_context.get<RoleContext["user"]>(user_id);
-    if (!data || typeof data !== "object") return [[]] as string[][];
-    const { roles } = data;
-    if (!roles || !Array.isArray(roles)) return [[]] as string[][];
-    const pre_menu: MenuButton[] = [];
-    const keys = Object.keys(menus) as (keyof typeof Roles)[];
-    for (const key of keys) {
-      if (roles.includes(key)) pre_menu.push(...menus[key]);
-    }
-    return fragmentation_menu(pre_menu);
-  }
-
-  static async get_command(user_context: UserContextAdapter, user_id: number) {
-    const data = await user_context.get<RoleContext["user"]>(user_id);
-    if (!data || typeof data !== "object") return [] as Command[];
-    const { roles } = data;
-    if (!roles || !Array.isArray(roles)) return [] as Command[];
-    const pre_commands: Command[] = [];
-    const keys = Object.keys(commands) as (keyof typeof Roles)[];
-    for (const key of keys) {
-      if (roles.includes(key)) pre_commands.push(...commands[key]);
-    }
-
-    return pre_commands;
   }
 
   // TODO: дополнить ещё check_role чтобы можно было в middleware записать название роли и только те кто имеет её могли пройти дальше
