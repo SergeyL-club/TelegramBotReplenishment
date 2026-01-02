@@ -12,7 +12,10 @@ export const role_codes: { [key in Roles]: string } = {
 
 export type Command = { command: string; description: string };
 export const commands: { [key in Roles]: Command[] } = {
-  [Roles.CLIENT]: [{ command: "/code", description: "получить доступ к функциям по токену" }],
+  [Roles.CLIENT]: [
+    { command: "/code", description: "получить доступ к функциям по токену" },
+    { command: "/menu", description: "Обновляет меню (если не обновилось само)" },
+  ],
   [Roles.TRADER]: [],
   [Roles.ADMIN]: [],
 } as const;

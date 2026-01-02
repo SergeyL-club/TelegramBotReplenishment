@@ -26,6 +26,20 @@ export class UserController {
     });
   }
 
+  static menu_refresh_role<Type extends DefaultContext>(
+    user_context: UserContextAdapter
+  ): ReturnType<Composer<Type & CommandContext>["handler"]> {
+    const composer = new Composer<Type>();
+    return composer.use(command_middleware("/menu")).handler(async (ctx) => {
+      const roles = await RoleService.get_roles(user_context, ctx);
+      if (!Array.isArray(roles)) return;
+      await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
+        scope: { type: "chat", chat_id: ctx.update.message.chat.id },
+      });
+      await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
+    });
+  }
+
   static code_registration_role<Type extends DefaultContext>(
     user_context: UserContextAdapter
   ): ReturnType<Composer<Type & CommandContext>["handler"]> {
