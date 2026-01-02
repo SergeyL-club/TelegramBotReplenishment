@@ -25,7 +25,7 @@ import { RedisRoleDatabaseAdapter } from "./databases/role.database";
 const role_database = new RedisRoleDatabaseAdapter(redis_database, "tg_trader:");
 
 // controllers
-import { RoleController } from "./controllers/role.controller";
+import { UserController } from "./controllers/user.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -96,7 +96,8 @@ async function main(): Promise<void> {
   });
 
   // routers
-  telegram_adapter.registration_composer(RoleController.start_registration_role(user_context));
+  telegram_adapter.registration_composer(UserController.start_registration_role(user_context));
+  // telegram_adapter.registration_composer(RoleController.code_registration_role(user_context));
 
   // launch telegraf
   telegraf.launch(() => {
