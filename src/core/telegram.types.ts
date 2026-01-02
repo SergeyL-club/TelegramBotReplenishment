@@ -19,7 +19,7 @@ type FromChat = {
   };
 };
 
-type MessageBase = {
+export type MessageBase = {
   message_id: number;
   date: number;
   text: string;
