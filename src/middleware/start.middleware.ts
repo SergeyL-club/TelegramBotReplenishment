@@ -3,6 +3,7 @@ import type { ContextMiddleware } from "../core/telegram.types";
 
 export type StartContext = Omit<ContextMiddleware, "update"> & {
   update: {
+    update_id: number;
     message: Omit<NonVoid<ContextMiddleware["update"]["message"]>, "text"> & { text: "/start" };
   };
 };
