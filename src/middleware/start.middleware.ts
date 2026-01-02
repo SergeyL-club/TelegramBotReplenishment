@@ -11,10 +11,9 @@ export type StartContext = Omit<ContextMiddleware, "update"> & {
 export function start_middleware<Type extends ContextMiddleware>(): Middleware<Type, StartContext> {
   return (ctx) => {
     if (typeof ctx.update.message !== "object") return;
-    if (Array.isArray(ctx.update.message.entities)) {
-      const has_bot = ctx.update.message.entities.some((e) => e.type === "bot_command");
-      if (has_bot) return;
-    }
+    if (!Array.isArray(ctx.update.message.entities)) return;
+    const has_bot = ctx.update.message.entities.some((e) => e.type === "bot_command");
+    if (!has_bot) return;
     if (!ctx.update.message.text.startsWith("/start")) return;
     return {} as StartContext;
   };
