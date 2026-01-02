@@ -23,7 +23,7 @@ type MessageBase = {
   message_id: number;
   date: number;
   text: string;
-  entities: { offset: number; length: number; type: string }[];
+  entities?: { offset: number; length: number; type: string }[];
 } & FromChat;
 
 export interface ContextMiddleware {
