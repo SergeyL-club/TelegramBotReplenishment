@@ -21,8 +21,8 @@ import { RedisUserContextAdapter } from "./databases/user.context";
 const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
 
 // role database adapter
-import { RedisRoleDatabaseAdapter } from "./databases/role.database";
-const role_database = new RedisRoleDatabaseAdapter(redis_database, "tg_trader:");
+// import { RedisRoleDatabaseAdapter } from "./databases/role.database";
+// const role_database = new RedisRoleDatabaseAdapter(redis_database, "tg_trader:");
 
 // controllers
 import { UserController } from "./controllers/user.controller";
