@@ -4,7 +4,7 @@ import type { ContextMiddleware } from "../core/telegram.types";
 export type MessageContext = Omit<ContextMiddleware, "update"> & {
   update: {
     update_id: number;
-    message: NonVoid<ContextMiddleware["update"]["message"]>;
+    message: Omit<NonVoid<ContextMiddleware["update"]["message"]>, "reply_to_message">;
   };
 };
 
