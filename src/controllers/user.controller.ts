@@ -4,6 +4,7 @@ import { start_middleware, type StartContext } from "../middleware/start.middlew
 import { RoleService } from "../services/role.service";
 import { Composer } from "../core/telegram.composer";
 import { Roles } from "../databases/role.constants";
+import { UserService } from "../services/user.service";
 
 export class UserController {
   static start_registration_role<Type extends DefaultContext>(
@@ -12,6 +13,7 @@ export class UserController {
     const composer = new Composer<Type>();
     return composer.use(start_middleware()).handler(async (ctx) => {
       await RoleService.registration_role(user_context, Roles.CLIENT, ctx);
+      await UserService.save_user_data(user_context, ctx);
     });
   }
 }
