@@ -107,8 +107,12 @@ async function main(): Promise<void> {
   telegram_adapter.registration_composer(UserController.start_registration_role(user_context));
   telegram_adapter.registration_composer(UserController.code_registration_role(user_context));
   telegram_adapter.registration_composer(UserController.menu_refresh_role(user_context));
+
   telegram_adapter.registration_composer(UserController.trader_deal_ready(user_context, deal_database));
   telegram_adapter.registration_composer(UserController.trader_deal_ready_callback(user_context, deal_database));
+
+  telegram_adapter.registration_composer(UserController.admin_deal_ready(user_context, deal_database));
+  telegram_adapter.registration_composer(UserController.admin_deal_ready_callback(user_context, deal_database));
 
   // launch telegraf
   telegraf.launch(() => {

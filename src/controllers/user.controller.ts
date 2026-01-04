@@ -165,6 +165,83 @@ export class UserController {
   }
 
   // Уведомления сделок admin
+  static admin_deal_ready<Type extends DefaultContext>(
+    user_context: UserContextAdapter,
+    deal_database: DealDatabaseAdapter
+  ): ReturnType<Composer<Type & MenuContext>["handler"]> {
+    const composer = new Composer<Type>();
+    return composer.use(menu_middleware("Режим Уведомлений")).handler(async (ctx) => {
+      const ready = await DealService.admin_ready(deal_database, ctx);
+      const is = await ctx.reply(`Режим уведомлений сделок: ${ready ? "Включен" : "Выключен"}`, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "Включить", callback_data: "admin_ready:1" },
+              { text: "Выключить", callback_data: "admin_ready:0" },
+            ],
+          ],
+        },
+      });
+      UserService.save_update_message(user_context, "admin_ready", [{ id: is.message_id, date: is.date + 1 * 60 }], ctx);
+    });
+  }
+
+  static admin_deal_ready_callback<Type extends DefaultContext>(user_context: UserContextAdapter, deal_database: DealDatabaseAdapter) {
+    const composer = new Composer<Type>();
+    return composer.use(callback_middleware("admin_ready")).handler(async (ctx) => {
+      await ctx.answerCbQuery();
+      const ready = Boolean(Number(ctx.update.callback_query.data.split(":").slice(1)));
+      if (ready) DealService.add_admin_ready(deal_database, ctx);
+      else DealService.delete_admin_ready(deal_database, ctx);
+      const messages: { id: number; date: number }[] | null = await UserService.get_update_message<{ id: number; date: number }[]>(
+        user_context,
+        "admin_ready",
+        ctx
+      );
+      if (messages === null) return;
+      const chat_id = ctx.update.callback_query
+        ? ctx.update.callback_query.message.chat.id
+        : ctx.update.message
+          ? ctx.update.message.chat.id
+          : ctx.chat?.id;
+      if (typeof chat_id === "undefined") return;
+      const current_id = ctx.update.callback_query.message.message_id;
+      const now = Math.floor(Date.now() / 1000);
+      const deleted: { id: number; date: number }[] = [];
+      for (const { id, date } of messages) {
+        if (id !== current_id && date < now) {
+          deleted.push({ id, date });
+          continue;
+        }
+        await ctx.telegram
+          .editMessageText(chat_id, id, undefined, `Режим уведомлений сделок: ${ready ? "Включен" : "Выключен"}`, {
+            reply_markup: {
+              inline_keyboard: [
+                [
+                  { text: "Включить", callback_data: "admin_ready:1" },
+                  { text: "Выключить", callback_data: "admin_ready:0" },
+                ],
+              ],
+            },
+          })
+          .catch((e) => {
+            if (typeof e === "object" && e !== null)
+              if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
+            throw e;
+          });
+      }
+      if (deleted.length > 0) {
+        await UserService.save_update_message(user_context, "admin_ready", undefined, ctx);
+        const deletedIds = new Set(deleted.map(({ id }) => id));
+        await UserService.save_update_message(
+          user_context,
+          "admin_ready",
+          messages.filter(({ id }) => !deletedIds.has(id)),
+          ctx
+        );
+      }
+    });
+  }
 
   // Методы оплаты для admin
 }
