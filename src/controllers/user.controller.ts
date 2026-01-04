@@ -148,10 +148,9 @@ export class UserController {
               ],
             },
           });
-        } catch (e: any) {
-          if (e?.description?.includes("message is not modified")) {
-            continue;
-          }
+        } catch (e: unknown) {
+          if (typeof e === "object" && e !== null)
+            if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) continue;
           throw e;
         }
       }
