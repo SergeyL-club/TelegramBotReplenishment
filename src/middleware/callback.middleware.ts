@@ -8,7 +8,7 @@ export type CallbackContext = Omit<ContextMiddleware, "update"> & {
   };
 };
 
-export function message_middleware<Type extends ContextMiddleware>(callback_text: string): Middleware<Type, CallbackContext> {
+export function callback_middleware<Type extends ContextMiddleware>(callback_text: string): Middleware<Type, CallbackContext> {
   return (ctx) => {
     if (typeof ctx.update.callback_query !== "object") return;
     if (typeof ctx.update.callback_query.data !== "string") return;
