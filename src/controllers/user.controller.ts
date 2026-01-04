@@ -23,7 +23,7 @@ export class UserController {
       await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
         scope: { type: "chat", chat_id: ctx.update.message.chat.id },
       });
-      await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
+      await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)), resize_keyboard: true } });
     });
   }
 
@@ -40,7 +40,7 @@ export class UserController {
         await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
           scope: { type: "chat", chat_id: ctx.update.message.chat.id },
         });
-        await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
+        await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)), resize_keyboard: true } });
       });
   }
 
@@ -71,7 +71,14 @@ export class UserController {
         await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
           scope: { type: "chat", chat_id: ctx.update.message.chat.id },
         });
-        await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
+        await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)), resize_keyboard: true } });
       });
   }
+
+  // Режим сделок у trader
+
+
+  // Уведомления сделок admin
+
+  // Методы оплаты для admin
 }
