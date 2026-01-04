@@ -8,10 +8,10 @@ export type UserData = {
 };
 
 export class UserService {
-  static async save_update_message(
+  static async save_update_message<Type>(
     user_context: UserContextAdapter,
     tag: string,
-    messages: { id: number; date: number }[] | undefined,
+    messages: Type | undefined,
     ctx: DefaultContext
   ): Promise<void> {
     const user_id = ctx.update.callback_query

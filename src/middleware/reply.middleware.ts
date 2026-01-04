@@ -6,8 +6,8 @@ export type ReplyContext<Type extends Record<string, unknown>> = Omit<ContextMid
   update: {
     update_id: number;
     message: Omit<NonVoid<ContextMiddleware["update"]["message"]>, "reply_to_message"> & { reply_to_message: MessageBase };
-    reply_data: Type;
   };
+  reply_data: Type;
 };
 
 export function reply_middleware<Type extends ContextMiddleware, ReplyData extends Record<string, unknown>>(
@@ -23,6 +23,6 @@ export function reply_middleware<Type extends ContextMiddleware, ReplyData exten
     const data = await reply_adapter.get<ReplyData>(ctx.update.message.reply_to_message.message_id);
     if (typeof data !== "object" || data === null) return;
     await reply_adapter.delete(ctx.update.message.reply_to_message.message_id);
-    return { update: { reply_data: data } } as unknown as ReplyContext<ReplyData>;
+    return { reply_data: data } as unknown as ReplyContext<ReplyData>;
   };
 }

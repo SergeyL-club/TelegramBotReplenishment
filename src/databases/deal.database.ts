@@ -8,6 +8,10 @@ export interface DealDatabaseAdapter {
   add_admin_ready(user_id: number): Promise<void>;
   delete_admin_ready(user_id: number): Promise<void>;
   admin_ready(user_id: number): Promise<boolean>;
+
+  add_method(method_name: string): Promise<void>;
+  delete_method(method_name: string): Promise<void>;
+  get_methods(): Promise<string[]>;
 }
 
 export class RedisDealDatabaseAdapter implements DealDatabaseAdapter {
@@ -45,5 +49,17 @@ export class RedisDealDatabaseAdapter implements DealDatabaseAdapter {
 
   public async admin_ready(user_id: number): Promise<boolean> {
     return (await this.db_api.sismember(this.key("admin:ready"), user_id)) > 0;
+  }
+
+  public async add_method(method_name: string): Promise<void> {
+    await this.db_api.sadd(this.key("methods"), method_name);
+  }
+
+  public async delete_method(method_name: string): Promise<void> {
+    await this.db_api.srem(this.key("methods"), method_name);
+  }
+
+  public async get_methods(): Promise<string[]> {
+    return await this.db_api.smembers(this.key("methods"));
   }
 }

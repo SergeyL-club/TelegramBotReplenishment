@@ -24,7 +24,10 @@ export type MenuButton = { text: string; positions: [x: number, y: number] };
 export const menus: { [key in Roles]: MenuButton[] } = {
   [Roles.CLIENT]: [],
   [Roles.TRADER]: [{ text: "Режим Сделок", positions: [0, 0] }],
-  [Roles.ADMIN]: [{ text: "Режим Уведомлений", positions: [0, 0] }],
+  [Roles.ADMIN]: [
+    { text: "Режим Уведомлений", positions: [0, 0] },
+    { text: "Методы оплаты", positions: [0, 1] },
+  ],
 } as const;
 
 export function fragmentation_menu(menus: MenuButton[]): string[][] {
