@@ -20,6 +20,10 @@ const telegram_adapter = new DefaultTelegramAdapter();
 import { RedisUserContextAdapter } from "./databases/user.context";
 const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
 
+// deal database adapter
+import { RedisDealDatabaseAdapter } from "./databases/deal.database";
+const deal_database = new RedisDealDatabaseAdapter(redis_database, "tg_trader:");
+
 // role database adapter
 // import { RedisRoleDatabaseAdapter } from "./databases/role.database";
 // const role_database = new RedisRoleDatabaseAdapter(redis_database, "tg_trader:");
@@ -103,6 +107,8 @@ async function main(): Promise<void> {
   telegram_adapter.registration_composer(UserController.start_registration_role(user_context));
   telegram_adapter.registration_composer(UserController.code_registration_role(user_context));
   telegram_adapter.registration_composer(UserController.menu_refresh_role(user_context));
+  telegram_adapter.registration_composer(UserController.trader_deal_ready(user_context, deal_database));
+  telegram_adapter.registration_composer(UserController.trader_deal_ready_callback(user_context, deal_database));
 
   // launch telegraf
   telegraf.launch(() => {
