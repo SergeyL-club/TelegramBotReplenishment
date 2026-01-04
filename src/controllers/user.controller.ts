@@ -103,7 +103,7 @@ export class UserController {
           ],
         },
       });
-      UserService.save_update_message(user_context, "trader_ready", [{ id: is.message_id, date: is.date }], ctx);
+      UserService.save_update_message(user_context, "trader_ready", [{ id: is.message_id, date: is.date + 1 * 60 }], ctx);
     });
   }
 
@@ -126,19 +126,16 @@ export class UserController {
           ? ctx.update.message.chat.id
           : ctx.chat?.id;
       if (typeof chat_id === "undefined") return;
-      const delta = Date.now() + 1 * 60 * 1000;
-
+      const current_id = ctx.update.callback_query.message.message_id;
+      const now = Math.floor(Date.now() / 1000);
       const deleted: { id: number; date: number }[] = [];
-      for (const message of messages.map(({ id, date }) => {
-        if (id === ctx.update.callback_query.message.message_id) date = delta;
-        return { id, date };
-      })) {
-        if (message.date > delta) {
-          deleted.push(message);
+      for (const { id, date } of messages) {
+        if (id !== current_id && date < now) {
+          deleted.push({ id, date });
           continue;
         }
-        try {
-          await ctx.telegram.editMessageText(chat_id, message.id, undefined, `Режим сделок: ${ready ? "Включен" : "Выключен"}`, {
+        await ctx.telegram
+          .editMessageText(chat_id, id, undefined, `Режим сделок: ${ready ? "Включен" : "Выключен"}`, {
             reply_markup: {
               inline_keyboard: [
                 [
@@ -147,12 +144,12 @@ export class UserController {
                 ],
               ],
             },
+          })
+          .catch((e) => {
+            if (typeof e === "object" && e !== null)
+              if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
+            throw e;
           });
-        } catch (e: unknown) {
-          if (typeof e === "object" && e !== null)
-            if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) continue;
-          throw e;
-        }
       }
       if (deleted.length > 0) {
         await UserService.save_update_message(user_context, "trader_ready", undefined, ctx);
