@@ -1,8 +1,8 @@
 import type { DefaultContext } from "../core/telegram.types";
 import type { UserContextAdapter } from "../databases/user.context";
 import type { ReplyDatabaseApadter } from "../databases/reply.database";
+import type { DealDatabaseAdapter } from "../databases/deal.database";
 import { menu_middleware, type MenuContext } from "../middleware/menu.middleware";
-import { DealDatabaseAdapter } from "../databases/deal.database";
 import { UserService } from "../services/user.service";
 import { Composer } from "../core/telegram.composer";
 import { callback_middleware, CallbackContext } from "../middleware/callback.middleware";
