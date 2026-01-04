@@ -23,7 +23,7 @@ export const commands: { [key in Roles]: Command[] } = {
 export type MenuButton = { text: string; positions: [x: number, y: number] };
 export const menus: { [key in Roles]: MenuButton[] } = {
   [Roles.CLIENT]: [],
-  [Roles.TRADER]: [],
+  [Roles.TRADER]: [{ text: "Режим Сделок", positions: [0, 0] }],
   [Roles.ADMIN]: [],
 } as const;
 
