@@ -52,7 +52,6 @@ export class DealService {
     await deal_database.delete_admin_ready(user_id);
   }
 
-
   static async admin_ready(deal_database: DealDatabaseAdapter, ctx: DefaultContext): Promise<boolean> {
     const user_id = ctx.update.callback_query
       ? ctx.update.callback_query.from.id
