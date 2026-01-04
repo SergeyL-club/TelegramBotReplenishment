@@ -8,6 +8,38 @@ export type UserData = {
 };
 
 export class UserService {
+  static async save_update_message(
+    user_context: UserContextAdapter,
+    tag: string,
+    messages: { id: number; date: number }[] | undefined,
+    ctx: DefaultContext
+  ): Promise<void> {
+    const user_id = ctx.update.callback_query
+      ? ctx.update.callback_query.from.id
+      : ctx.update.message
+        ? ctx.update.message.from.id
+        : ctx.from?.id;
+    if (typeof user_id !== "number") return;
+    await user_context.set(user_id, { [tag]: messages });
+  }
+
+  static async get_update_message<Type>(
+    user_context: UserContextAdapter,
+    tag: string,
+    ctx: DefaultContext
+  ): Promise<Type | null> {
+    const user_id = ctx.update.callback_query
+      ? ctx.update.callback_query.from.id
+      : ctx.update.message
+        ? ctx.update.message.from.id
+        : ctx.from?.id;
+    if (typeof user_id !== "number") return null;
+    const data = await user_context.get<Record<string, unknown>>(user_id);
+    if (data === null) return null;
+    if (typeof data[tag] !== "object") return null;
+    return data[tag] as Type;
+  }
+
   static async save_user_data(user_context: UserContextAdapter, ctx: DefaultContext): Promise<void> {
     const user_id = ctx.update.callback_query
       ? ctx.update.callback_query.from.id
@@ -16,7 +48,7 @@ export class UserService {
         : ctx.from?.id;
     if (typeof user_id !== "number") return;
     const chat_id = ctx.update.callback_query
-      ? ctx.update.callback_query.chat.id
+      ? ctx.update.callback_query.message.chat.id
       : ctx.update.message
         ? ctx.update.message.chat.id
         : ctx.chat?.id;

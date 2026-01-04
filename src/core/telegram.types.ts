@@ -33,8 +33,9 @@ export interface ContextMiddleware {
     callback_query?: {
       id: string;
       chat_instance: string;
+      message: MessageBase & { reply_to_message?: MessageBase };
       data: string;
-    } & FromChat;
+    } & { from: FromChat["from"] };
   };
 }
 
