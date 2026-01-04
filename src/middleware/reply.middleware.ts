@@ -23,6 +23,6 @@ export function reply_middleware<Type extends ContextMiddleware, ReplyData exten
     const data = await reply_adapter.get<ReplyData>(ctx.update.message.reply_to_message.message_id);
     if (typeof data !== "object" || data === null) return;
     await reply_adapter.delete(ctx.update.message.reply_to_message.message_id);
-    return { reply_data: data } as unknown as ReplyContext<ReplyData>;
+    return { update: { reply_data: data } } as unknown as ReplyContext<ReplyData>;
   };
 }
