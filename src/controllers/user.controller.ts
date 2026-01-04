@@ -8,6 +8,7 @@ import { fragmentation_menu, Roles } from "../databases/role.constants";
 import { UserService } from "../services/user.service";
 import { CommandService } from "../services/command.service";
 import { MenuService } from "../services/menu.service";
+import { role_middleware } from "../middleware/role.middleware";
 
 export class UserController {
   static start_registration_role<Type extends DefaultContext>(
@@ -30,41 +31,47 @@ export class UserController {
     user_context: UserContextAdapter
   ): ReturnType<Composer<Type & CommandContext>["handler"]> {
     const composer = new Composer<Type>();
-    return composer.use(command_middleware("/menu")).handler(async (ctx) => {
-      const roles = await RoleService.get_roles(user_context, ctx);
-      if (!Array.isArray(roles)) return;
-      await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
-        scope: { type: "chat", chat_id: ctx.update.message.chat.id },
+    return composer
+      .use(role_middleware(user_context, Roles.CLIENT))
+      .use(command_middleware("/menu"))
+      .handler(async (ctx) => {
+        const roles = await RoleService.get_roles(user_context, ctx);
+        if (!Array.isArray(roles)) return;
+        await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
+          scope: { type: "chat", chat_id: ctx.update.message.chat.id },
+        });
+        await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
       });
-      await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
-    });
   }
 
   static code_registration_role<Type extends DefaultContext>(
     user_context: UserContextAdapter
   ): ReturnType<Composer<Type & CommandContext>["handler"]> {
     const composer = new Composer<Type>();
-    return composer.use(command_middleware("/code")).handler(async (ctx) => {
-      const [token] = ctx.update.message.text.trim().split(" ").slice(1);
-      if (typeof token !== "string") {
-        await ctx.reply(`Неверный токен (${token})`);
-        return;
-      }
-      const role = await RoleService.verification_token(token);
-      if (typeof role !== "string") {
-        await ctx.reply(`Неверный токен (${token})`);
-        return;
-      }
-      await RoleService.registration_role(user_context, role, ctx);
-      const roles = await RoleService.get_roles(user_context, ctx);
-      if (!Array.isArray(roles)) {
-        await ctx.reply(`Неверный токен (${token})`);
-        return;
-      }
-      await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
-        scope: { type: "chat", chat_id: ctx.update.message.chat.id },
+    return composer
+      .use(role_middleware(user_context, Roles.CLIENT))
+      .use(command_middleware("/code"))
+      .handler(async (ctx) => {
+        const [token] = ctx.update.message.text.trim().split(" ").slice(1);
+        if (typeof token !== "string") {
+          await ctx.reply(`Неверный токен (${token})`);
+          return;
+        }
+        const role = await RoleService.verification_token(token);
+        if (typeof role !== "string") {
+          await ctx.reply(`Неверный токен (${token})`);
+          return;
+        }
+        await RoleService.registration_role(user_context, role, ctx);
+        const roles = await RoleService.get_roles(user_context, ctx);
+        if (!Array.isArray(roles)) {
+          await ctx.reply(`Неверный токен (${token})`);
+          return;
+        }
+        await ctx.telegram.setMyCommands(CommandService.get_commands_roles(roles), {
+          scope: { type: "chat", chat_id: ctx.update.message.chat.id },
+        });
+        await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
       });
-      await ctx.reply("Обновление Меню", { reply_markup: { keyboard: fragmentation_menu(MenuService.get_menu_roles(roles)) } });
-    });
   }
 }
