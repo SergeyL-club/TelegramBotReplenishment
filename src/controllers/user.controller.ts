@@ -243,5 +243,4 @@ export class UserController {
     });
   }
 
-  // Методы оплаты для admin
 }
