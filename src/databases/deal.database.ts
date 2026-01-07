@@ -1,16 +1,24 @@
 import type Redis from "ioredis";
+import { deep_merge } from "./user.context";
 
-type CreateHistory = { id: number; create_at: number; info_at: number; };
+type CreateHistory = { id: number; create_at: number; info_at: number };
+type SumHistory = { sum: number; info_at: number };
 
 export interface DealData {
   id: number;
+  client: {
+    user_id: number;
+    chat_id: number;
+    username: string;
+  };
+  sum: number;
 
-  history: CreateHistory[];
+  history: (CreateHistory | SumHistory)[];
 
   create_at: number;
 }
 
-export type DealCreataInfo = Pick<DealData, "create_at">;
+export type DealCreataInfo = Pick<DealData, "create_at" | "client">;
 
 export interface DealDatabaseAdapter {
   add_trader_ready(user_id: number): Promise<void>;
@@ -27,6 +35,7 @@ export interface DealDatabaseAdapter {
 
   create_deal(data: DealCreataInfo): Promise<number | null>;
   get_deal(deal_id: number): Promise<DealData | null>;
+  update_deal(deal_id: number, data: Partial<DealData>): Promise<void>;
 }
 
 export class RedisDealDatabaseAdapter implements DealDatabaseAdapter {
@@ -97,5 +106,15 @@ export class RedisDealDatabaseAdapter implements DealDatabaseAdapter {
     const data_str = await this.db_api.hget(this.key("deals"), deal_id.toString());
     if (data_str === null) return null;
     return JSON.parse(data_str);
+  }
+
+  public async update_deal(deal_id: number, data: Partial<DealData>): Promise<void> {
+    const deal_info = await this.get_deal(deal_id);
+    if (deal_info === null) return;
+    if (typeof data.sum === "number") {
+      data.history ??= [];
+      data.history.push({ sum: data.sum, info_at: Date.now() });
+    }
+    await this.db_api.hset(this.key("deals"), deal_id.toString(), JSON.stringify(deep_merge(deal_info as Partial<DealData>, data)));
   }
 }

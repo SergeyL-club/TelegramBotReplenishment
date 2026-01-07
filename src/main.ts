@@ -17,24 +17,21 @@ import { DefaultTelegramAdapter } from "./core/telegram.adapter";
 const telegram_adapter = new DefaultTelegramAdapter();
 
 // user context adapter
-import { RedisUserContextAdapter } from "./databases/user.context";
-const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
+// import { RedisUserContextAdapter } from "./databases/user.context";
+// const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
 
 // deal database adapter
-import { RedisDealDatabaseAdapter } from "./databases/deal.database";
-const deal_database = new RedisDealDatabaseAdapter(redis_database, "tg_trader:");
+// import { RedisDealDatabaseAdapter } from "./databases/deal.database";
+// const deal_database = new RedisDealDatabaseAdapter(redis_database, "tg_trader:");
 
 // role database adapter
 // import { RedisRoleDatabaseAdapter } from "./databases/role.database";
 // const role_database = new RedisRoleDatabaseAdapter(redis_database, "tg_trader:");
 
 // reply database adapter
-import { RedisReplyDatabaseApadter } from "./databases/reply.database";
-const reply_database = new RedisReplyDatabaseApadter(redis_database, "tg_trader:");
+// import { RedisReplyDatabaseApadter } from "./databases/reply.database";
+// const reply_database = new RedisReplyDatabaseApadter(redis_database, "tg_trader:");
 
-// controllers
-import { UserController } from "./controllers/user.controller";
-import { DealController } from "./controllers/deal.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -105,21 +102,6 @@ async function main(): Promise<void> {
   });
 
   // routers
-  telegram_adapter.registration_composer(UserController.start_registration_role(user_context));
-  telegram_adapter.registration_composer(UserController.code_registration_role(user_context));
-  telegram_adapter.registration_composer(UserController.menu_refresh_role(user_context));
-
-  telegram_adapter.registration_composer(UserController.trader_deal_ready(user_context, deal_database));
-  telegram_adapter.registration_composer(UserController.trader_deal_ready_callback(user_context, deal_database));
-
-  telegram_adapter.registration_composer(UserController.admin_deal_ready(user_context, deal_database));
-  telegram_adapter.registration_composer(UserController.admin_deal_ready_callback(user_context, deal_database));
-
-  telegram_adapter.registration_composer(DealController.methods_menu(user_context, deal_database));
-  telegram_adapter.registration_composer(DealController.methods_menu_callback(user_context, reply_database));
-  telegram_adapter.registration_composer(DealController.methods_menu_reply(user_context, deal_database, reply_database));
-
-  telegram_adapter.registration_composer(DealController.deal_create_menu(deal_database));
 
   // launch telegraf
   telegraf.launch(() => {
