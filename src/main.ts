@@ -18,30 +18,34 @@ const telegram_adapter = new DefaultTelegramAdapter();
 
 // user context adapter
 import { RedisUserContextAdapter } from "./databases/user.context";
-const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
+const user_database = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
 
 // deal database adapter
-// import { RedisDealDatabaseAdapter } from "./databases/deal.database";
-// const deal_database = new RedisDealDatabaseAdapter(redis_database, "tg_trader:");
-
-// role database adapter
-// import { RedisRoleDatabaseAdapter } from "./databases/role.database";
-// const role_database = new RedisRoleDatabaseAdapter(redis_database, "tg_trader:");
+import { RedisDealDatabaseAdapter } from "./databases/deal.database";
+const deal_database = new RedisDealDatabaseAdapter(redis_database, "tg_trader:");
 
 // reply database adapter
-// import { RedisReplyDatabaseApadter } from "./databases/reply.database";
-// const reply_database = new RedisReplyDatabaseApadter(redis_database, "tg_trader:");
+import { RedisReplyDatabaseApadter } from "./databases/reply.database";
+const reply_database = new RedisReplyDatabaseApadter(redis_database, "tg_trader:");
 
 // services
 import { UserService } from "./services/user.service";
-const user_service = new UserService(user_context);
+const user_service = new UserService(user_database);
 
 import { RoleService } from "./services/role.service";
-const role_service = new RoleService(user_context);
+const role_service = new RoleService(user_database);
+
+import { MethodService } from "./services/method.service";
+const method_service = new MethodService(deal_database);
+
+import { LiveMessageService } from "./services/live_message.service";
+const live_message_service = new LiveMessageService(user_database);
 
 // controllers
 import * as StartController from "./controllers/start.controller";
 import * as CommandMenuController from "./controllers/command.controller";
+import * as MenuController from "./controllers/menu.controller";
+import * as MethodsModifyController from "./controllers/methods_modify.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -117,6 +121,10 @@ async function main(): Promise<void> {
   telegram_adapter.registration_composer(CommandMenuController.code_registration_role(role_service));
 
   telegram_adapter.registration_composer(CommandMenuController.refresh_menu(role_service));
+
+  telegram_adapter.registration_composer(MenuController.admin_methods_modify_menu(role_service, live_message_service, method_service));
+  telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_callback(live_message_service, reply_database));
+  telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_reply(live_message_service, method_service, reply_database));
 
   // launch telegraf
   telegraf.launch(() => {
