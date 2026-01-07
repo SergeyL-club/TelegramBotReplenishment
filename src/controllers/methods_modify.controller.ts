@@ -23,12 +23,12 @@ export function admin_methods_modify_callback<Type extends DefaultContext>(
     const app = get_app_context(ctx);
     if (!app) return;
 
-    const messages = await live_message_service.get_ids(app.user_id, "methods_modify_reply");
+    const messages = await live_message_service.get_ids(app.user_id, "methods_modify_reply", true);
     for (const { message_id } of messages) {
       await ctx.deleteMessage(message_id);
       await reply_database.delete(message_id);
     }
-    await live_message_service.clear(app.user_id, "methods_modify_reply");
+    await live_message_service.clear(app.user_id, "methods_modify_reply", true);
 
     const { method_str: type } = get_callback_data<{ type_str: string; method_str: string }>(ctx, ["type_str", "method_str"]) ?? {};
     if (typeof type !== "string") return;
@@ -38,11 +38,16 @@ export function admin_methods_modify_callback<Type extends DefaultContext>(
 
     const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
     await reply_database.add(is.message_id, { type, message_id: ctx.update.callback_query.message.message_id, expired_at: expired });
-    await live_message_service.registration(app.user_id, "methods_modify_reply", {
-      message_id: is.message_id,
-      chat_id: is.chat.id,
-      expires_at: expired,
-    });
+    await live_message_service.registration(
+      app.user_id,
+      "methods_modify_reply",
+      {
+        message_id: is.message_id,
+        chat_id: is.chat.id,
+        expires_at: expired,
+      },
+      true
+    );
   });
 }
 
@@ -58,7 +63,7 @@ export function admin_methods_modify_reply<Type extends DefaultContext>(
     if (!app) return;
 
     await clear_reply(ctx);
-    await live_message_service.clear(app.user_id, "methods_modify_reply");
+    await live_message_service.clear(app.user_id, "methods_modify_reply", true);
 
     const { text: method_name } = get_text(ctx) ?? {};
     if (typeof method_name !== "string") return;
