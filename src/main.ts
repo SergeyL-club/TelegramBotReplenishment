@@ -113,7 +113,10 @@ async function main(): Promise<void> {
 
   // routers
   telegram_adapter.registration_composer(StartController.start_registration_role(user_service, role_service));
+
   telegram_adapter.registration_composer(CommandMenuController.code_registration_role(role_service));
+
+  telegram_adapter.registration_composer(CommandMenuController.refresh_menu(role_service));
 
   // launch telegraf
   telegraf.launch(() => {
