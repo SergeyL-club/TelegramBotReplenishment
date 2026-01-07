@@ -39,8 +39,9 @@ const user_service = new UserService(user_context);
 import { RoleService } from "./services/role.service";
 const role_service = new RoleService(user_context);
 
-// routers
+// controllers
 import * as StartController from "./controllers/start.controller";
+import * as CommandMenuController from "./controllers/command.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -112,6 +113,7 @@ async function main(): Promise<void> {
 
   // routers
   telegram_adapter.registration_composer(StartController.start_registration_role(user_service, role_service));
+  telegram_adapter.registration_composer(CommandMenuController.code_registration_role(role_service));
 
   // launch telegraf
   telegraf.launch(() => {
