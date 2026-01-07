@@ -76,6 +76,7 @@ export function admin_methods_modify_reply<Type extends DefaultContext>(
     const now = Math.ceil(Date.now() / 1000);
     const methods_modify_menu = MethodsModifyUI.main_menu(methods);
     const messages_update = await live_message_service.get_ids(app.user_id, "methods_menu");
+    messages_update.push({ message_id: ctx.reply_data.message_id, chat_id: ctx.update.message.chat.id, expires_at: now + 1 });
     for (const { message_id, chat_id, expires_at } of messages_update)
       if (now < expires_at)
         await ctx.telegram
