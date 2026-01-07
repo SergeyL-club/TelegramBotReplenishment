@@ -22,4 +22,16 @@ export class UserService {
   public async del_admin_ready(user_id: number): Promise<void> {
     await this.deal_adapter.delete_admin_ready(user_id);
   }
+
+  public async trader_ready(user_id: number): Promise<boolean> {
+    return await this.deal_adapter.trader_ready(user_id);
+  }
+
+  public async add_trader_ready(user_id: number): Promise<void> {
+    await this.deal_adapter.add_trader_ready(user_id);
+  }
+
+  public async del_trader_ready(user_id: number): Promise<void> {
+    await this.deal_adapter.delete_trader_ready(user_id);
+  }
 }
