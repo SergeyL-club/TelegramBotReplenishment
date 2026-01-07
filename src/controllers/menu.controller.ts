@@ -7,6 +7,7 @@ import { Composer } from "../core/telegram.composer";
 import { get_app_context } from "../helpers/app_context.adapter";
 import { Roles } from "../databases/role.constants";
 import { MethodsModifyUI } from "../ui/methods_modify.ui";
+import { role_middleware } from "../middleware/role.middleware";
 
 export function admin_methods_modify_menu<Type extends DefaultContext>(
   role_service: RoleService,
@@ -15,23 +16,57 @@ export function admin_methods_modify_menu<Type extends DefaultContext>(
 ): ReturnType<Composer<Type & MenuContext>["handler"]> {
   const composer = new Composer<Type>();
 
-  return composer.use(menu_middleware("Методы оплаты")).handler(async (ctx) => {
-    const app = get_app_context(ctx);
-    if (!app) return;
+  return composer
+    .use(role_middleware(role_service, Roles.ADMIN))
+    .use(menu_middleware("Методы оплаты"))
+    .handler(async (ctx) => {
+      const app = get_app_context(ctx);
+      if (!app) return;
 
-    const roles = await role_service.get_roles(app.user_id);
-    if (!roles.includes(Roles.ADMIN)) return;
+      const roles = await role_service.get_roles(app.user_id);
+      if (!roles.includes(Roles.ADMIN)) return;
 
-    const methods = await method_service.get_method_names();
+      const methods = await method_service.get_method_names();
 
-    const methods_modify_menu = MethodsModifyUI.main_menu(methods);
-    const is = await ctx.reply(methods_modify_menu.text, methods_modify_menu.extra);
+      const methods_modify_menu = MethodsModifyUI.main_menu(methods);
+      const is = await ctx.reply(methods_modify_menu.text, methods_modify_menu.extra);
 
-    const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
-    await live_message_service.registration(app.user_id, "methods_menu", {
-      message_id: is.message_id,
-      chat_id: is.chat.id,
-      expires_at: expired,
+      const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
+      await live_message_service.registration(app.user_id, "methods_menu", {
+        message_id: is.message_id,
+        chat_id: is.chat.id,
+        expires_at: expired,
+      });
     });
-  });
+}
+
+export function admin_ready_menu<Type extends DefaultContext>(
+  role_service: RoleService,
+  live_message_service: LiveMessageService,
+  method_service: MethodService
+): ReturnType<Composer<Type & MenuContext>["handler"]> {
+  const composer = new Composer<Type>();
+
+  return composer
+    .use(role_middleware(role_service, Roles.ADMIN))
+    .use(menu_middleware("Режим Уведомлений"))
+    .handler(async (ctx) => {
+      const app = get_app_context(ctx);
+      if (!app) return;
+
+      const roles = await role_service.get_roles(app.user_id);
+      if (!roles.includes(Roles.ADMIN)) return;
+
+      const methods = await method_service.get_method_names();
+
+      const methods_modify_menu = MethodsModifyUI.main_menu(methods);
+      const is = await ctx.reply(methods_modify_menu.text, methods_modify_menu.extra);
+
+      const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
+      await live_message_service.registration(app.user_id, "methods_menu", {
+        message_id: is.message_id,
+        chat_id: is.chat.id,
+        expires_at: expired,
+      });
+    });
 }
