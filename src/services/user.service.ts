@@ -7,6 +7,10 @@ export class UserService {
     private readonly deal_adapter: DealDatabaseAdapter
   ) {}
 
+  public async users(): Promise<number[]> {
+    return await this.user_adapter.all();
+  }
+
   public async save_user(data: { user_id: number; chat_id: number; username: string | undefined }) {
     await this.user_adapter.set(data.user_id, data);
   }

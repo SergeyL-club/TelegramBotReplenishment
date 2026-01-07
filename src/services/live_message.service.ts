@@ -1,4 +1,6 @@
+import type { Telegraf } from "telegraf";
 import type { UserContextAdapter } from "../databases/user.context";
+import type { DefaultContext } from "../core/telegram.types";
 
 export interface MessageBindData {
   message_id: number;
@@ -8,7 +10,10 @@ export interface MessageBindData {
 }
 
 export class LiveMessageService {
-  constructor(private readonly user_adapter: UserContextAdapter) {}
+  constructor(
+    private readonly user_adapter: UserContextAdapter,
+    private readonly telegraf: Telegraf<DefaultContext>
+  ) {}
 
   public async registration(user_id: number, key: string, message: MessageBindData, reply = false): Promise<void> {
     await this.user_adapter.set(user_id, { [reply ? "replys" : "edited"]: { [key]: [message] } });
@@ -18,6 +23,41 @@ export class LiveMessageService {
     const data = await this.user_adapter.get<{ replys: { [key]?: MessageBindData[] }; edited: { [key]?: MessageBindData[] } }>(user_id);
     if (!data || typeof data !== "object") return [];
     return reply ? (data["replys"] ? (data["replys"][key] ?? []) : []) : data["edited"] ? (data["edited"][key] ?? []) : [];
+  }
+
+  public async cleanupExpiredKeys(user_id: number, keys: string[], reply = false): Promise<{ [key: string]: MessageBindData[] }> {
+    const data = await this.user_adapter.get<{ replys: { [k: string]: MessageBindData[] }; edited: { [k: string]: MessageBindData[] } }>(user_id);
+    if (!data) return {};
+
+    const container = reply ? (data.replys ?? {}) : (data.edited ?? {});
+    const expiredResult: { [key: string]: MessageBindData[] } = {};
+
+    for (const key of keys) {
+      const messages = container[key] ?? [];
+      if (messages.length === 0) continue;
+
+      const now = Math.floor(Date.now() / 1000);
+      const valid: MessageBindData[] = [];
+      const expired: MessageBindData[] = [];
+
+      for (const msg of messages) {
+        if (msg.expires_at <= now) expired.push(msg);
+        else valid.push(msg);
+      }
+
+      if (expired.length > 0) {
+        expiredResult[key] = expired;
+        if (reply) for (const message of expired) await this.telegraf.telegram.deleteMessage(message.chat_id, message.message_id);
+      }
+
+      await this.clear(user_id, key, reply);
+
+      if (valid.length > 0) {
+        await this.user_adapter.set(user_id, { [reply ? "replys" : "edited"]: { [key]: valid } });
+      }
+    }
+
+    return expiredResult;
   }
 
   public async clear(user_id: number, key: string, reply = false): Promise<void> {

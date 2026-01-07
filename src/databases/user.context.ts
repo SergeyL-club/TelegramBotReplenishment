@@ -2,6 +2,7 @@ import type Redis from "ioredis";
 
 export interface UserContextAdapter {
   get<Type extends Record<string, unknown>>(user_id: number): Promise<Partial<Type> | null>;
+  all(): Promise<number[]>;
   set<Type extends Record<string, unknown>>(user_id: number, context: Type): Promise<void>;
   delete(user_id: number): Promise<void>;
 }
@@ -56,6 +57,10 @@ export class RedisUserContextAdapter implements UserContextAdapter {
     return `${this.prefix}${user_id}`;
   }
 
+  private key_ids(): string {
+    return `${this.prefix}ids`;
+  }
+
   public async get<Type extends Record<string, unknown>>(user_id: number): Promise<Partial<Type> | null> {
     const data = await this.db_api.get(this.key(user_id));
     if (!data) return null;
@@ -69,9 +74,16 @@ export class RedisUserContextAdapter implements UserContextAdapter {
   public async set<Type extends Record<string, unknown>>(user_id: number, context: Type): Promise<void> {
     const old = (await this.get(user_id)) ?? {};
     await this.db_api.set(this.key(user_id), JSON.stringify(deep_merge(old, context)));
+    await this.db_api.sadd(this.key_ids(), user_id.toString());
   }
 
   public async delete(user_id: number): Promise<void> {
     await this.db_api.del(this.key(user_id));
+    await this.db_api.srem(this.key_ids(), user_id.toString());
+  }
+
+  public async all(): Promise<number[]> {
+    const ids = await this.db_api.smembers(this.key_ids());
+    return ids.map(Number);
   }
 }

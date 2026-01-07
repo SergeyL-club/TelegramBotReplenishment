@@ -39,7 +39,12 @@ import { MethodService } from "./services/method.service";
 const method_service = new MethodService(deal_database);
 
 import { LiveMessageService } from "./services/live_message.service";
-const live_message_service = new LiveMessageService(user_database);
+const live_message_service = new LiveMessageService(user_database, telegraf);
+
+// timers
+import { Timer } from "./core/timer";
+import { timeout_live_message } from "./timers/live_message.timer";
+const timer_live_message = new Timer(timeout_live_message.bind(null, user_service, live_message_service), 1000);
 
 // controllers
 import * as StartController from "./controllers/start.controller";
@@ -51,6 +56,7 @@ import * as TraderReadyController from "./controllers/trader_ready.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
+  timer_live_message.stop();
   redis_database.disconnect();
 }
 
@@ -133,6 +139,9 @@ async function main(): Promise<void> {
 
   telegram_adapter.registration_composer(MenuController.trader_ready_menu(role_service, user_service, live_message_service));
   telegram_adapter.registration_composer(TraderReadyController.trader_ready_callback(user_service, live_message_service));
+
+  // timer
+  timer_live_message.start();
 
   // launch telegraf
   telegraf.launch(() => {
