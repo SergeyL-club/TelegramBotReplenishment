@@ -17,8 +17,8 @@ import { DefaultTelegramAdapter } from "./core/telegram.adapter";
 const telegram_adapter = new DefaultTelegramAdapter();
 
 // user context adapter
-// import { RedisUserContextAdapter } from "./databases/user.context";
-// const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
+import { RedisUserContextAdapter } from "./databases/user.context";
+const user_context = new RedisUserContextAdapter(redis_database, "tg_trader:flow_contex:");
 
 // deal database adapter
 // import { RedisDealDatabaseAdapter } from "./databases/deal.database";
@@ -32,6 +32,15 @@ const telegram_adapter = new DefaultTelegramAdapter();
 // import { RedisReplyDatabaseApadter } from "./databases/reply.database";
 // const reply_database = new RedisReplyDatabaseApadter(redis_database, "tg_trader:");
 
+// services
+import { UserService } from "./services/user.service";
+const user_service = new UserService(user_context);
+
+import { RoleService } from "./services/role.service";
+const role_service = new RoleService(user_context);
+
+// routers
+import * as StartController from "./controllers/start.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -102,6 +111,7 @@ async function main(): Promise<void> {
   });
 
   // routers
+  telegram_adapter.registration_composer(StartController.start_registration_role(user_service, role_service));
 
   // launch telegraf
   telegraf.launch(() => {
