@@ -18,8 +18,15 @@ export class LiveMessageService {
     private readonly reply_adapter: ReplyDatabaseApadter
   ) {}
 
-  public async registration(user_id: number, key: string, message: MessageBindData, reply = false): Promise<void> {
-    await this.user_adapter.set(user_id, { [reply ? "replys" : "edited"]: { [key]: [message] } });
+  /**
+    Добавил список для того чтобы old_text менять
+    
+    await live_message_service.clear(app.user_id, "methods_menu");
+    await live_message_service.registration(app.user_id, "methods_menu", messages_update.map((el) => ({...el, old_text: new_text })));
+  
+   **/
+  public async registration(user_id: number, key: string, message: MessageBindData | MessageBindData[], reply = false): Promise<void> {
+    await this.user_adapter.set(user_id, { [reply ? "replys" : "edited"]: { [key]: Array.isArray(message) ? message : [message] } });
   }
 
   public async get_ids(user_id: number, key: string, reply = false): Promise<MessageBindData[]> {
