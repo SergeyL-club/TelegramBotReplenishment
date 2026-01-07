@@ -119,6 +119,8 @@ async function main(): Promise<void> {
   telegram_adapter.registration_composer(DealController.methods_menu_callback(user_context, reply_database));
   telegram_adapter.registration_composer(DealController.methods_menu_reply(user_context, deal_database, reply_database));
 
+  telegram_adapter.registration_composer(DealController.deal_create_menu(deal_database));
+
   // launch telegraf
   telegraf.launch(() => {
     default_logger.info("Launch Telegram Bot");

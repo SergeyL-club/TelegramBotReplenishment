@@ -7,6 +7,7 @@ import { UserService } from "../services/user.service";
 import { Composer } from "../core/telegram.composer";
 import { callback_middleware, CallbackContext } from "../middleware/callback.middleware";
 import { reply_middleware, ReplyContext } from "../middleware/reply.middleware";
+import { DealService } from "../services/deal.service";
 
 export class DealController {
   static methods_menu<Type extends DefaultContext>(
@@ -117,6 +118,31 @@ export class DealController {
           ctx
         );
       }
+    });
+  }
+
+  // Кнопка попонления, когда создается сделка с номером и действиями по сделке
+  static deal_create_menu<Type extends DefaultContext>(deal_database: DealDatabaseAdapter) {
+    const composer = new Composer<Type>();
+    return composer.use(menu_middleware("Пополнение")).handler(async (ctx) => {
+      const deal_id = await DealService.create_deal(deal_database, { create_at: Date.now() });
+      if (deal_id === null) {
+        await ctx.reply("Не удалось создать заявку, обратитесь в техподдержку");
+        return;
+      }
+
+      const info = await DealService.deal_info(deal_database, deal_id);
+      if (info === null) return;
+      await ctx.reply(info, {
+        reply_markup: {
+          inline_keyboard: [
+            [
+              { text: "Добавить сумму", callback_data: "deal_menu_sum" },
+              { text: "Добавить метод оплаты", callback_data: "deal_menu_methods" },
+            ],
+          ],
+        },
+      });
     });
   }
 }
