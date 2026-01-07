@@ -73,8 +73,14 @@ export function admin_methods_modify_reply<Type extends DefaultContext>(
     const messages_update = await live_message_service.get_ids(app.user_id, "methods_menu");
     for (const { message_id, chat_id, expires_at } of messages_update)
       if (now < expires_at)
-        await ctx.telegram.editMessageText(chat_id, message_id, undefined, methods_modify_menu.text, {
-          reply_markup: { inline_keyboard: (methods_modify_menu.extra!.reply_markup as InlineKeyboardMarkup).inline_keyboard },
-        });
+        await ctx.telegram
+          .editMessageText(chat_id, message_id, undefined, methods_modify_menu.text, {
+            reply_markup: { inline_keyboard: (methods_modify_menu.extra!.reply_markup as InlineKeyboardMarkup).inline_keyboard },
+          })
+          .catch((e) => {
+            if (typeof e === "object" && e !== null)
+              if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
+            throw e;
+          });
   });
 }

@@ -30,7 +30,7 @@ const reply_database = new RedisReplyDatabaseApadter(redis_database, "tg_trader:
 
 // services
 import { UserService } from "./services/user.service";
-const user_service = new UserService(user_database);
+const user_service = new UserService(user_database, deal_database);
 
 import { RoleService } from "./services/role.service";
 const role_service = new RoleService(user_database);
@@ -46,6 +46,7 @@ import * as StartController from "./controllers/start.controller";
 import * as CommandMenuController from "./controllers/command.controller";
 import * as MenuController from "./controllers/menu.controller";
 import * as MethodsModifyController from "./controllers/methods_modify.controller";
+import * as AdminReadyController from "./controllers/admin_ready.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -125,6 +126,9 @@ async function main(): Promise<void> {
   telegram_adapter.registration_composer(MenuController.admin_methods_modify_menu(role_service, live_message_service, method_service));
   telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_callback(live_message_service, reply_database));
   telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_reply(live_message_service, method_service, reply_database));
+
+  telegram_adapter.registration_composer(MenuController.admin_ready_menu(role_service, user_service, live_message_service));
+  telegram_adapter.registration_composer(AdminReadyController.admin_ready_callback(user_service, live_message_service));
 
   // launch telegraf
   telegraf.launch(() => {

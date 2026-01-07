@@ -2,12 +2,14 @@ import type { DefaultContext } from "../core/telegram.types";
 import type { RoleService } from "../services/role.service";
 import type { MethodService } from "../services/method.service";
 import type { LiveMessageService } from "../services/live_message.service";
+import type { UserService } from "../services/user.service";
 import { menu_middleware, type MenuContext } from "../middleware/menu.middleware";
 import { Composer } from "../core/telegram.composer";
 import { get_app_context } from "../helpers/app_context.adapter";
 import { Roles } from "../databases/role.constants";
 import { MethodsModifyUI } from "../ui/methods_modify.ui";
 import { role_middleware } from "../middleware/role.middleware";
+import { AdminReadyUI } from "../ui/admin_ready.ui";
 
 export function admin_methods_modify_menu<Type extends DefaultContext>(
   role_service: RoleService,
@@ -42,8 +44,8 @@ export function admin_methods_modify_menu<Type extends DefaultContext>(
 
 export function admin_ready_menu<Type extends DefaultContext>(
   role_service: RoleService,
-  live_message_service: LiveMessageService,
-  method_service: MethodService
+  user_serivce: UserService,
+  live_message_service: LiveMessageService
 ): ReturnType<Composer<Type & MenuContext>["handler"]> {
   const composer = new Composer<Type>();
 
@@ -57,13 +59,13 @@ export function admin_ready_menu<Type extends DefaultContext>(
       const roles = await role_service.get_roles(app.user_id);
       if (!roles.includes(Roles.ADMIN)) return;
 
-      const methods = await method_service.get_method_names();
+      const ready = await user_serivce.admin_ready(app.user_id);
 
-      const methods_modify_menu = MethodsModifyUI.main_menu(methods);
-      const is = await ctx.reply(methods_modify_menu.text, methods_modify_menu.extra);
+      const admin_ready_menu = AdminReadyUI.main_menu(ready);
+      const is = await ctx.reply(admin_ready_menu.text, admin_ready_menu.extra);
 
       const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
-      await live_message_service.registration(app.user_id, "methods_menu", {
+      await live_message_service.registration(app.user_id, "admin_ready_menu", {
         message_id: is.message_id,
         chat_id: is.chat.id,
         expires_at: expired,
