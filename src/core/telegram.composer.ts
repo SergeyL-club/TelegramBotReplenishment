@@ -2,7 +2,7 @@ export type Middleware<Ctx extends object, Added extends object> = (ctx: Ctx) =>
 
 export type NonVoid<T> = Exclude<T, void | undefined>;
 
-export class Composer<Ctx extends object> {
+export class Composer<Ctx extends object = {}> {
   private readonly middlewares: Middleware<Ctx, object>[]; // object вместо any
 
   public constructor(middlewares: Middleware<Ctx, object>[] = []) {
