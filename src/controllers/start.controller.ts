@@ -1,9 +1,9 @@
 import type { DefaultContext } from "../core/telegram.types";
-import { CommandService } from "../services/command.service";
 import type { UserService } from "../services/user.service";
 import type { RoleService } from "../services/role.service";
 import { start_middleware, type StartContext } from "../middleware/start.middleware";
 import { get_app_context } from "../helpers/app_context.adapter";
+import { CommandService } from "../services/command.service";
 import { Composer } from "../core/telegram.composer";
 import { Roles } from "../databases/role.constants";
 import { StartUI } from "../ui/start.ui";
