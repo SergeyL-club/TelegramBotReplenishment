@@ -1,9 +1,11 @@
 import type { Telegraf } from "telegraf";
 import type { UserContextAdapter } from "../databases/user.context";
 import type { DefaultContext } from "../core/telegram.types";
+import type { ReplyDatabaseApadter } from "../databases/reply.database";
 
 export interface MessageBindData {
   message_id: number;
+  old_text: string;
   chat_id: number;
   expires_at: number;
   force?: boolean;
@@ -12,7 +14,8 @@ export interface MessageBindData {
 export class LiveMessageService {
   constructor(
     private readonly user_adapter: UserContextAdapter,
-    private readonly telegraf: Telegraf<DefaultContext>
+    private readonly telegraf: Telegraf<DefaultContext>,
+    private readonly reply_adapter: ReplyDatabaseApadter
   ) {}
 
   public async registration(user_id: number, key: string, message: MessageBindData, reply = false): Promise<void> {
@@ -47,7 +50,14 @@ export class LiveMessageService {
 
       if (expired.length > 0) {
         expiredResult[key] = expired;
-        if (reply) for (const message of expired) await this.telegraf.telegram.deleteMessage(message.chat_id, message.message_id);
+        if (reply)
+          for (const message of expired) {
+            await this.reply_adapter.delete(message.message_id);
+            await this.telegraf.telegram.deleteMessage(message.chat_id, message.message_id);
+          }
+        else
+          for (const message of expired)
+            await this.telegraf.telegram.editMessageText(message.chat_id, message.message_id, undefined, "[Неактуально] " + message.old_text);
       }
 
       await this.clear(user_id, key, reply);

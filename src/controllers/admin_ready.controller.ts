@@ -32,6 +32,7 @@ export function admin_ready_callback<Type extends DefaultContext>(
     const messages_update = await live_message_service.get_ids(app.user_id, "admin_ready_menu");
     messages_update.push({
       message_id: ctx.update.callback_query.message.message_id,
+      old_text: "",
       chat_id: ctx.update.callback_query.message.chat.id,
       expires_at: now + 1,
     });

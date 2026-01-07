@@ -39,7 +39,7 @@ import { MethodService } from "./services/method.service";
 const method_service = new MethodService(deal_database);
 
 import { LiveMessageService } from "./services/live_message.service";
-const live_message_service = new LiveMessageService(user_database, telegraf);
+const live_message_service = new LiveMessageService(user_database, telegraf, reply_database);
 
 // timers
 import { Timer } from "./core/timer";

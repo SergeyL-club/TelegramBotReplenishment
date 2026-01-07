@@ -34,6 +34,7 @@ export function admin_methods_modify_menu<Type extends DefaultContext>(
       const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
       await live_message_service.registration(app.user_id, "methods_menu", {
         message_id: is.message_id,
+        old_text: is.text,
         chat_id: is.chat.id,
         expires_at: expired,
       });
@@ -62,6 +63,7 @@ export function admin_ready_menu<Type extends DefaultContext>(
       const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
       await live_message_service.registration(app.user_id, "admin_ready_menu", {
         message_id: is.message_id,
+        old_text: is.text,
         chat_id: is.chat.id,
         expires_at: expired,
       });
@@ -90,6 +92,7 @@ export function trader_ready_menu<Type extends DefaultContext>(
       const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
       await live_message_service.registration(app.user_id, "trader_ready_menu", {
         message_id: is.message_id,
+        old_text: is.text,
         chat_id: is.chat.id,
         expires_at: expired,
       });
