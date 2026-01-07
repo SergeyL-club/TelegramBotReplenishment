@@ -57,7 +57,13 @@ export class LiveMessageService {
           }
         else
           for (const message of expired)
-            await this.telegraf.telegram.editMessageText(message.chat_id, message.message_id, undefined, "[Неактуально] " + message.old_text);
+            await this.telegraf.telegram
+              .editMessageText(message.chat_id, message.message_id, undefined, "[Неактуально] " + message.old_text)
+              .catch((e) => {
+                if (typeof e === "object" && e !== null)
+                  if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
+                throw e;
+              });
       }
 
       await this.clear(user_id, key, reply);
