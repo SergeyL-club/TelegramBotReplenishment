@@ -19,7 +19,7 @@ export function start_registration_role<Type extends DefaultContext>(
     if (!app) return;
 
     await role_service.ensure_role(app.user_id, Roles.CLIENT);
-    await user_service.save_user({ ...app });
+    await user_service.save_user(app);
 
     const roles = await role_service.get_roles(app.user_id);
 
