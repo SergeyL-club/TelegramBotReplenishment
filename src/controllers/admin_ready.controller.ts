@@ -28,24 +28,31 @@ export function admin_ready_callback<Type extends DefaultContext>(
     const ready = await user_serivce.admin_ready(app.user_id);
 
     const now = Math.ceil(Date.now() / 1000);
-    const methods_modify_menu = AdminReadyUI.main_menu(ready);
-    const messages_update = await live_message_service.get_ids(app.user_id, "admin_ready_menu");
+    const admin_ready_menu = AdminReadyUI.main_menu(ready);
+    const messages_update = await live_message_service.get_messages("edited", "admin_ready_menu");
     messages_update.push({
       message_id: ctx.update.callback_query.message.message_id,
-      old_text: "",
       chat_id: ctx.update.callback_query.message.chat.id,
-      expires_at: now + 1,
+      expired_at: now + 1,
     });
-    for (const { message_id, chat_id, expires_at } of messages_update)
-      if (now < expires_at)
+    for (const { message_id, chat_id, expired_at } of messages_update)
+      if (now < expired_at) {
         await ctx.telegram
-          .editMessageText(chat_id, message_id, undefined, methods_modify_menu.text, {
-            reply_markup: { inline_keyboard: (methods_modify_menu.extra!.reply_markup as InlineKeyboardMarkup).inline_keyboard },
+          .editMessageText(chat_id, message_id, undefined, admin_ready_menu.text, {
+            reply_markup: { inline_keyboard: (admin_ready_menu.extra!.reply_markup as InlineKeyboardMarkup).inline_keyboard },
           })
           .catch((e) => {
             if (typeof e === "object" && e !== null)
               if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
             throw e;
           });
+        if (expired_at !== now + 1)
+          await live_message_service.registration(
+            "edited",
+            "admin_ready_menu",
+            { chat_id, message_id },
+            { old_text: admin_ready_menu.text, expired_at }
+          );
+      }
   });
 }

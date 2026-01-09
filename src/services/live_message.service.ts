@@ -1,89 +1,71 @@
 import type { Telegraf } from "telegraf";
-import type { UserContextAdapter } from "../databases/user.context";
 import type { DefaultContext } from "../core/telegram.types";
 import type { ReplyDatabaseApadter } from "../databases/reply.database";
-
-export interface MessageBindData {
-  message_id: number;
-  old_text: string;
-  chat_id: number;
-  expires_at: number;
-  force?: boolean;
-}
+import type { LiveDatabaseAdapter, IndexParams } from "../databases/live.database";
 
 export class LiveMessageService {
   constructor(
-    private readonly user_adapter: UserContextAdapter,
+    private readonly live_adapter: LiveDatabaseAdapter,
     private readonly telegraf: Telegraf<DefaultContext>,
     private readonly reply_adapter: ReplyDatabaseApadter
   ) {}
 
-  /**
-    Добавил список для того чтобы old_text менять
-    
-    await live_message_service.clear(app.user_id, "methods_menu");
-    await live_message_service.registration(app.user_id, "methods_menu", messages_update.map((el) => ({...el, old_text: new_text })));
-  
-   **/
-  public async registration(user_id: number, key: string, message: MessageBindData | MessageBindData[], reply = false): Promise<void> {
-    await this.user_adapter.set(user_id, { [reply ? "replys" : "edited"]: { [key]: Array.isArray(message) ? message : [message] } });
+  public async registration<Type extends Record<string, unknown> & { expired_at: number }>(
+    type: "edited" | "replys",
+    method_name: string,
+    index: IndexParams,
+    message: (Type & { expired_at: number }) | (Type & { expired_at: number }[])
+  ): Promise<void> {
+    const messages = Array.isArray(message) ? message : [message];
+    for (const data of messages) {
+      await this.live_adapter.add(type, method_name, index, data);
+    }
   }
 
-  public async get_ids(user_id: number, key: string, reply = false): Promise<MessageBindData[]> {
-    const data = await this.user_adapter.get<{ replys: { [key]?: MessageBindData[] }; edited: { [key]?: MessageBindData[] } }>(user_id);
-    if (!data || typeof data !== "object") return [];
-    return reply ? (data["replys"] ? (data["replys"][key] ?? []) : []) : data["edited"] ? (data["edited"][key] ?? []) : [];
+  public async get_messages<Type extends Record<string, unknown>>(
+    type: "edited" | "replys",
+    method_name: string
+  ): Promise<(Type & { message_id: number; expired_at: number; chat_id: number })[]> {
+    const ids = await this.live_adapter.get_messages(type, method_name);
+    const messages: (Type & { message_id: number; expired_at: number; chat_id: number })[] = [];
+    for (const id of ids) {
+      const data = await this.live_adapter.get<Type>(type, method_name, id);
+      if (data) messages.push({ ...data, message_id: id });
+    }
+    return messages;
   }
 
-  public async cleanupExpiredKeys(user_id: number, keys: string[], reply = false): Promise<{ [key: string]: MessageBindData[] }> {
-    const data = await this.user_adapter.get<{ replys: { [k: string]: MessageBindData[] }; edited: { [k: string]: MessageBindData[] } }>(user_id);
-    if (!data) return {};
+  public async cleanupExpiredKeys(type: "edited" | "replys"): Promise<{ method: string; message_id: number }[]> {
+    const messages = await this.live_adapter.all_messages(type);
 
-    const container = reply ? (data.replys ?? {}) : (data.edited ?? {});
-    const expiredResult: { [key: string]: MessageBindData[] } = {};
+    const expired: { method: string; message_id: number }[] = [];
 
-    for (const key of keys) {
-      const messages = container[key] ?? [];
-      if (messages.length === 0) continue;
-
+    for (const { method, message_id } of messages) {
       const now = Math.floor(Date.now() / 1000);
-      const valid: MessageBindData[] = [];
-      const expired: MessageBindData[] = [];
-
-      for (const msg of messages) {
-        if (msg.expires_at <= now) expired.push(msg);
-        else valid.push(msg);
-      }
-
-      if (expired.length > 0) {
-        expiredResult[key] = expired;
-        if (reply)
-          for (const message of expired) {
-            await this.reply_adapter.delete(message.message_id);
-            await this.telegraf.telegram.deleteMessage(message.chat_id, message.message_id);
-          }
-        else
-          for (const message of expired)
-            await this.telegraf.telegram
-              .editMessageText(message.chat_id, message.message_id, undefined, "[Неактуально] " + message.old_text)
-              .catch((e) => {
-                if (typeof e === "object" && e !== null)
-                  if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
-                throw e;
-              });
-      }
-
-      await this.clear(user_id, key, reply);
-
-      if (valid.length > 0) {
-        await this.user_adapter.set(user_id, { [reply ? "replys" : "edited"]: { [key]: valid } });
+      const data = await this.live_adapter.get(type, method, message_id);
+      if (data && data.expired_at <= now) {
+        expired.push({ method, message_id });
+        if (type === "edited" && "old_text" in data)
+          await this.telegraf.telegram.editMessageText(data.chat_id, message_id, undefined, "[Неактуальный] " + data.old_text);
+        else if (type === "replys") {
+          await this.telegraf.telegram.deleteMessage(data.chat_id, message_id);
+          await this.reply_adapter.delete(message_id);
+        }
       }
     }
 
-    return expiredResult;
+    for (const { method, message_id } of expired) {
+      await this.live_adapter.delete(type, method, message_id);
+    }
+
+    return expired;
   }
 
-  public async clear(user_id: number, key: string, reply = false): Promise<void> {
-    await this.user_adapter.set(user_id, { [reply ? "replys" : "edited"]: { [key]: undefined } });
+  async clear(type: "edited" | "replys", method_name: string): Promise<void> {
+    const ids = await this.live_adapter.get_messages(type, method_name);
+    for (const message_id of ids) {
+      await this.live_adapter.delete(type, method_name, message_id);
+      if (type === "replys") await this.reply_adapter.delete(message_id);
+    }
   }
 }

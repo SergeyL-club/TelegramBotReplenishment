@@ -28,6 +28,10 @@ const deal_database = new RedisDealDatabaseAdapter(redis_database, "tg_trader:")
 import { RedisReplyDatabaseApadter } from "./databases/reply.database";
 const reply_database = new RedisReplyDatabaseApadter(redis_database, "tg_trader:");
 
+// live database adapter
+import { RedisLiveDatabaseAdapter } from "./databases/live.database";
+const live_database = new RedisLiveDatabaseAdapter(redis_database, "tg_trader");
+
 // services
 import { UserService } from "./services/user.service";
 const user_service = new UserService(user_database, deal_database);
@@ -39,12 +43,12 @@ import { MethodService } from "./services/method.service";
 const method_service = new MethodService(deal_database);
 
 import { LiveMessageService } from "./services/live_message.service";
-const live_message_service = new LiveMessageService(user_database, telegraf, reply_database);
+const live_message_service = new LiveMessageService(live_database, telegraf, reply_database);
 
 // timers
 import { Timer } from "./core/timer";
 import { timeout_live_message } from "./timers/live_message.timer";
-const timer_live_message = new Timer(timeout_live_message.bind(null, user_service, live_message_service), 1000);
+const timer_live_message = new Timer(timeout_live_message.bind(null, live_message_service), 1000);
 
 // controllers
 import * as StartController from "./controllers/start.controller";

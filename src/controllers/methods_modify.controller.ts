@@ -23,12 +23,9 @@ export function admin_methods_modify_callback<Type extends DefaultContext>(
     const app = get_app_context(ctx);
     if (!app) return;
 
-    const messages = await live_message_service.get_ids(app.user_id, "methods_modify_reply", true);
-    for (const { message_id } of messages) {
-      await ctx.deleteMessage(message_id);
-      await reply_database.delete(message_id);
-    }
-    await live_message_service.clear(app.user_id, "methods_modify_reply", true);
+    const messages = await live_message_service.get_messages("replys", "methods_modify_reply");
+    for (const { message_id } of messages) await ctx.deleteMessage(message_id);
+    await live_message_service.clear("replys", "methods_modify_reply");
 
     const { method_str: type } = get_callback_data<{ type_str: string; method_str: string }>(ctx, ["type_str", "method_str"]) ?? {};
     if (typeof type !== "string") return;
@@ -39,15 +36,13 @@ export function admin_methods_modify_callback<Type extends DefaultContext>(
     const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
     await reply_database.add(is.message_id, { type, message_id: ctx.update.callback_query.message.message_id, expired_at: expired });
     await live_message_service.registration(
-      app.user_id,
+      "replys",
       "methods_modify_reply",
+      { chat_id: is.chat.id, message_id: is.message_id },
       {
         message_id: is.message_id,
-        old_text: is.text,
-        chat_id: is.chat.id,
-        expires_at: expired,
-      },
-      true
+        expired_at: expired,
+      }
     );
   });
 }
@@ -64,7 +59,7 @@ export function admin_methods_modify_reply<Type extends DefaultContext>(
     if (!app) return;
 
     await clear_reply(ctx);
-    await live_message_service.clear(app.user_id, "methods_modify_reply", true);
+    await live_message_service.clear("replys", "methods_modify_reply");
 
     const { text: method_name } = get_text(ctx) ?? {};
     if (typeof method_name !== "string") return;
@@ -76,10 +71,14 @@ export function admin_methods_modify_reply<Type extends DefaultContext>(
 
     const now = Math.ceil(Date.now() / 1000);
     const methods_modify_menu = MethodsModifyUI.main_menu(methods);
-    const messages_update = await live_message_service.get_ids(app.user_id, "methods_menu");
-    messages_update.push({ message_id: ctx.reply_data.message_id, old_text: "", chat_id: ctx.update.message.chat.id, expires_at: now + 1 });
-    for (const { message_id, chat_id, expires_at } of messages_update)
-      if (now < expires_at)
+    const messages_update = await live_message_service.get_messages("edited", "methods_menu");
+    messages_update.push({
+      message_id: ctx.reply_data.message_id,
+      chat_id: ctx.update.message.chat.id,
+      expired_at: now + 1,
+    });
+    for (const { message_id, chat_id, expired_at } of messages_update)
+      if (now < expired_at) {
         await ctx.telegram
           .editMessageText(chat_id, message_id, undefined, methods_modify_menu.text, {
             reply_markup: { inline_keyboard: (methods_modify_menu.extra!.reply_markup as InlineKeyboardMarkup).inline_keyboard },
@@ -89,5 +88,13 @@ export function admin_methods_modify_reply<Type extends DefaultContext>(
               if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
             throw e;
           });
+        if (expired_at !== now + 1)
+          await live_message_service.registration(
+            "edited",
+            "methods_menu",
+            { chat_id, message_id },
+            { old_text: methods_modify_menu.text, expired_at }
+          );
+      }
   });
 }

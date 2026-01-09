@@ -32,12 +32,15 @@ export function admin_methods_modify_menu<Type extends DefaultContext>(
       const is = await ctx.reply(methods_modify_menu.text, methods_modify_menu.extra);
 
       const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
-      await live_message_service.registration(app.user_id, "methods_menu", {
-        message_id: is.message_id,
-        old_text: is.text,
-        chat_id: is.chat.id,
-        expires_at: expired,
-      });
+      await live_message_service.registration(
+        "edited",
+        "methods_menu",
+        { chat_id: is.chat.id, message_id: is.message_id },
+        {
+          old_text: is.text,
+          expired_at: expired,
+        }
+      );
     });
 }
 
@@ -61,12 +64,15 @@ export function admin_ready_menu<Type extends DefaultContext>(
       const is = await ctx.reply(admin_ready_menu.text, admin_ready_menu.extra);
 
       const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
-      await live_message_service.registration(app.user_id, "admin_ready_menu", {
-        message_id: is.message_id,
-        old_text: is.text,
-        chat_id: is.chat.id,
-        expires_at: expired,
-      });
+      await live_message_service.registration(
+        "edited",
+        "admin_ready_menu",
+        { chat_id: is.chat.id, message_id: is.message_id },
+        {
+          old_text: is.text,
+          expired_at: expired,
+        }
+      );
     });
 }
 
@@ -90,11 +96,14 @@ export function trader_ready_menu<Type extends DefaultContext>(
       const is = await ctx.reply(trader_ready_menu.text, trader_ready_menu.extra);
 
       const expired = Math.ceil(Date.now() / 1000) + 1 * 60;
-      await live_message_service.registration(app.user_id, "trader_ready_menu", {
-        message_id: is.message_id,
-        old_text: is.text,
-        chat_id: is.chat.id,
-        expires_at: expired,
-      });
+      await live_message_service.registration(
+        "edited",
+        "trader_ready_menu",
+        { chat_id: is.chat.id, message_id: is.message_id },
+        {
+          old_text: is.text,
+          expired_at: expired,
+        }
+      );
     });
 }
