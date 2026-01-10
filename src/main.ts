@@ -45,6 +45,9 @@ const method_service = new MethodService(deal_database);
 import { LiveMessageService } from "./services/live_message.service";
 const live_message_service = new LiveMessageService(live_database, telegraf, reply_database);
 
+import { DealService } from "./services/deal.service";
+const deal_service = new DealService(deal_database);
+
 // timers
 import { Timer } from "./core/timer";
 import { timeout_live_message } from "./timers/live_message.timer";
@@ -57,6 +60,7 @@ import * as MenuController from "./controllers/menu.controller";
 import * as MethodsModifyController from "./controllers/methods_modify.controller";
 import * as AdminReadyController from "./controllers/admin_ready.controller";
 import * as TraderReadyController from "./controllers/trader_ready.controller";
+import * as DealController from "./controllers/deal.controller";
 
 async function shutdown(reason: string = "SIGINT"): Promise<void> {
   telegraf.stop(reason);
@@ -143,6 +147,8 @@ async function main(): Promise<void> {
 
   telegram_adapter.registration_composer(MenuController.trader_ready_menu(role_service, user_service, live_message_service));
   telegram_adapter.registration_composer(TraderReadyController.trader_ready_callback(user_service, live_message_service));
+
+  telegram_adapter.registration_composer(DealController.registration_deal(deal_service, user_service, live_message_service));
 
   // timer
   timer_live_message.start();
