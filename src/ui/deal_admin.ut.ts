@@ -17,14 +17,7 @@ export const DealAdminUI = {
     const client = await user_service.get_user(deal.client_id);
     const trader = deal.trader_id ? await user_service.get_user(deal.trader_id) : null;
     return {
-      text: `Заявка #${deal.id}
-      Метода оплаты: ${deal.method_name ? deal.method_name : "Не задан"}
-      Сумма: ${deal.amount ? deal.amount : "Не задана"}
-      Реквизиты: ${deal.details ? deal.details : "Не заданы"}
-      Клиент: ${client!.username ?? client!.user_id}
-      Продавец: ${trader ? (trader.username ?? trader.user_id) : "Не задан"}
-      ---История---
-      ${formating_history(deal.history)}`,
+      text: `Заявка #${deal.id}\nМетода оплаты: ${deal.method_name ? deal.method_name : "Не задан"}\nСумма: ${deal.amount ? deal.amount : "Не задана"}\nКлиент: ${client!.username ?? client!.user_id}\nПродавец: ${trader ? (trader.username ?? trader.user_id) : "Не задан"}\nРеквизиты: ${deal.details ? deal.details : "Не заданы"}\n---История---\n${formating_history(deal.history.reverse())}`,
       extra: {},
     };
   },

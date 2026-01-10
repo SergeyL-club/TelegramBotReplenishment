@@ -139,8 +139,8 @@ async function main(): Promise<void> {
   telegram_adapter.registration_composer(CommandMenuController.refresh_menu(role_service));
 
   telegram_adapter.registration_composer(MenuController.admin_methods_modify_menu(role_service, live_message_service, method_service));
-  telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_callback(live_message_service, reply_database));
-  telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_reply(live_message_service, method_service, reply_database));
+  telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_callback(live_message_service));
+  telegram_adapter.registration_composer(MethodsModifyController.admin_methods_modify_reply(live_message_service, method_service));
 
   telegram_adapter.registration_composer(MenuController.admin_ready_menu(role_service, user_service, live_message_service));
   telegram_adapter.registration_composer(AdminReadyController.admin_ready_callback(user_service, live_message_service));
@@ -149,6 +149,8 @@ async function main(): Promise<void> {
   telegram_adapter.registration_composer(TraderReadyController.trader_ready_callback(user_service, live_message_service));
 
   telegram_adapter.registration_composer(DealController.registration_deal(deal_service, user_service, live_message_service));
+  telegram_adapter.registration_composer(DealController.deal_amount_callback(live_message_service));
+  telegram_adapter.registration_composer(DealController.deal_amount_reply(deal_service, user_service, live_message_service));
 
   // timer
   timer_live_message.start();

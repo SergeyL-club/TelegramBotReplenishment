@@ -6,6 +6,7 @@ import { Composer } from "../core/telegram.composer";
 import { menu_middleware, type MenuContext } from "../middleware/menu.middleware";
 import { DealClientUI } from "../ui/deal_client.ui";
 import { DealAdminUI } from "../ui/deal_admin.ut";
+import { get_app_context } from "../helpers/app_context.adapter";
 
 export function registration_deal<Type extends DefaultContext>(
   deal_service: DealService,
@@ -15,7 +16,10 @@ export function registration_deal<Type extends DefaultContext>(
   const composer = new Composer<Type>();
 
   return composer.use(menu_middleware("Пополнение")).handler(async (ctx) => {
-    const deal_id = await deal_service.registration_deal(ctx.update.message.from.id);
+    const app = get_app_context(ctx);
+    if (!app) return;
+
+    const deal_id = await deal_service.registration_deal(app.user_id);
     const deal = (await deal_service.get_deal(deal_id))!;
     const deal_menu = DealClientUI.add_pre_deal_info(deal);
 
@@ -26,7 +30,6 @@ export function registration_deal<Type extends DefaultContext>(
       `deal_info:${deal_id}`,
       { chat_id: is.chat.id, message_id: is.message_id },
       {
-        user_id: ctx.update.message.from.id,
         type: "client_info",
         old_text: is.text,
         expired_at: expired,
@@ -44,7 +47,6 @@ export function registration_deal<Type extends DefaultContext>(
         `deal_info:${deal_id}`,
         { chat_id: is.chat.id, message_id: is.message_id },
         {
-          user_id: admin_id,
           type: "admin_info",
           old_text: is.text,
           expired_at: expired,
@@ -53,3 +55,5 @@ export function registration_deal<Type extends DefaultContext>(
     }
   });
 }
+
+export { deal_amount_callback, deal_amount_reply } from "./deal_pre.controller";

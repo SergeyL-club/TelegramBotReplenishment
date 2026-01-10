@@ -1,6 +1,7 @@
 import type { Middleware, NonVoid } from "../core/telegram.composer";
 import type { ContextMiddleware, MessageBase } from "../core/telegram.types";
 import type { ReplyDatabaseApadter } from "../databases/reply.database";
+import { LiveMessageService } from "../services/live_message.service";
 
 export type ReplyContext<Type extends Record<string, unknown>> = Omit<ContextMiddleware, "update"> & {
   update: {
@@ -11,7 +12,8 @@ export type ReplyContext<Type extends Record<string, unknown>> = Omit<ContextMid
 };
 
 export function reply_middleware<Type extends ContextMiddleware, ReplyData extends Record<string, unknown>>(
-  reply_adapter: ReplyDatabaseApadter
+  method_name: string,
+  live_message_service: LiveMessageService
 ): Middleware<Type, ReplyContext<ReplyData>> {
   return async (ctx) => {
     if (typeof ctx.update.message !== "object") return;
@@ -20,9 +22,9 @@ export function reply_middleware<Type extends ContextMiddleware, ReplyData exten
       if (has_bot) return;
     }
     if (typeof ctx.update.message.reply_to_message !== "object") return;
-    const data = await reply_adapter.get<ReplyData>(ctx.update.message.reply_to_message.message_id);
-    if (typeof data !== "object" || data === null) return;
-    await reply_adapter.delete(ctx.update.message.reply_to_message.message_id);
-    return { reply_data: data } as unknown as ReplyContext<ReplyData>;
+    const datas = await live_message_service.get_messages("replys", method_name);
+    for (const data of datas) {
+      if (data.message_id !== ctx.update.message.message_id) return { reply_data: data } as unknown as ReplyContext<ReplyData>;
+    }
   };
 }
