@@ -1,5 +1,4 @@
 import type { DefaultContext } from "../core/telegram.types";
-import type { ReplyDatabaseApadter } from "../databases/reply.database";
 import type { LiveMessageService } from "../services/live_message.service";
 import type { DealService } from "../services/deal.service";
 import type { UserService } from "../services/user.service";

@@ -1,6 +1,5 @@
 import type { Middleware, NonVoid } from "../core/telegram.composer";
 import type { ContextMiddleware, MessageBase } from "../core/telegram.types";
-import type { ReplyDatabaseApadter } from "../databases/reply.database";
 import { LiveMessageService } from "../services/live_message.service";
 
 export type ReplyContext<Type extends Record<string, unknown>> = Omit<ContextMiddleware, "update"> & {

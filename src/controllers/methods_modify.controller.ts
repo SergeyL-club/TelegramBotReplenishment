@@ -1,5 +1,4 @@
 import type { DefaultContext } from "../core/telegram.types";
-import type { ReplyDatabaseApadter } from "../databases/reply.database";
 import type { LiveMessageService } from "../services/live_message.service";
 import type { MethodService } from "../services/method.service";
 import type { InlineKeyboardMarkup } from "telegraf/typings/core/types/typegram";
