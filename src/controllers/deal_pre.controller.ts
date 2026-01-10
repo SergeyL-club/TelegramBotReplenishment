@@ -91,27 +91,27 @@ export function deal_amount_reply<Type extends DefaultContext>(
           chat_id: ctx.update.message.chat.id,
           expired_at: now + 1,
         });
-      for (const { message_id, chat_id, expired_at, type } of messages_update)
-        if (now < expired_at) {
+      for (const message of messages_update)
+        if (now < message.expired_at) {
           await ctx.telegram
             .editMessageText(
-              chat_id,
-              message_id,
+              message.chat_id,
+              message.message_id,
               undefined,
-              type === "client_info" ? client_info.text : admin_info.text,
-              (type === "client_info" ? client_info.extra : admin_info.extra) as ExtraEditMessageText
+              message.type === "client_info" ? client_info.text : admin_info.text,
+              (message.type === "client_info" ? client_info.extra : admin_info.extra) as ExtraEditMessageText
             )
             .catch((e) => {
               if (typeof e === "object" && e !== null)
                 if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
               throw e;
             });
-          if (expired_at !== now + 1)
+          if (message.expired_at !== now + 1)
             await live_message_service.registration(
               "edited",
               `deal_info:${ctx.reply_data.deal_id}`,
-              { chat_id, message_id },
-              { old_text: type === "client_info" ? client_info.text : admin_info.text, expired_at }
+              { chat_id: message.chat_id, message_id: message.message_id },
+              { ...message, old_text: message.type === "client_info" ? client_info.text : admin_info.text, expired_at: message.expired_at }
             );
         }
     });

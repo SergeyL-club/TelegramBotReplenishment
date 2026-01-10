@@ -37,6 +37,7 @@ export function admin_methods_modify_menu<Type extends DefaultContext>(
         "methods_menu",
         { chat_id: is.chat.id, message_id: is.message_id },
         {
+          reply_methods: ["methods_modify_reply"],
           old_text: is.text,
           expired_at: expired,
         }

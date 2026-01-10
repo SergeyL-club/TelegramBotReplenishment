@@ -1,7 +1,7 @@
 import type { DefaultContext } from "../core/telegram.types";
 import type { LiveMessageService } from "../services/live_message.service";
 import type { MethodService } from "../services/method.service";
-import type { InlineKeyboardMarkup } from "telegraf/typings/core/types/typegram";
+import type { ExtraEditMessageText } from "telegraf/typings/telegram-types";
 import { callback_middleware, type CallbackContext } from "../middleware/callback.middleware";
 import { reply_middleware, type ReplyContext } from "../middleware/reply.middleware";
 import { Composer } from "../core/telegram.composer";
@@ -78,23 +78,27 @@ export function admin_methods_modify_reply<Type extends DefaultContext>(
           chat_id: ctx.update.message.chat.id,
           expired_at: now + 1,
         });
-      for (const { message_id, chat_id, expired_at } of messages_update)
-        if (now < expired_at) {
+      for (const message of messages_update)
+        if (now < message.expired_at) {
           await ctx.telegram
-            .editMessageText(chat_id, message_id, undefined, methods_modify_menu.text, {
-              reply_markup: { inline_keyboard: (methods_modify_menu.extra!.reply_markup as InlineKeyboardMarkup).inline_keyboard },
-            })
+            .editMessageText(
+              message.chat_id,
+              message.message_id,
+              undefined,
+              methods_modify_menu.text,
+              methods_modify_menu.extra as ExtraEditMessageText
+            )
             .catch((e) => {
               if (typeof e === "object" && e !== null)
                 if ("description" in e && typeof e.description === "string" && e.description.includes("message is not modified")) return;
               throw e;
             });
-          if (expired_at !== now + 1)
+          if (message.expired_at !== now + 1)
             await live_message_service.registration(
               "edited",
               "methods_menu",
-              { chat_id, message_id },
-              { old_text: methods_modify_menu.text, expired_at }
+              { chat_id: message.chat_id, message_id: message.message_id },
+              { ...message, old_text: methods_modify_menu.text, expired_at: message.expired_at }
             );
         }
     });

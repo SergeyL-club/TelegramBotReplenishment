@@ -42,12 +42,15 @@ export class LiveMessageService {
 
     for (const { method, message_id } of messages) {
       const now = Math.floor(Date.now() / 1000);
-      const data = await this.live_adapter.get(type, method, message_id);
+      const data = await this.live_adapter.get<{ deal_id: number; reply_methods: string[] }>(type, method, message_id);
       if (data && data.expired_at <= now) {
         expired.push({ method, message_id });
-        if (type === "edited" && "old_text" in data)
+        if (type === "edited" && "old_text" in data) {
           await this.telegraf.telegram.editMessageText(data.chat_id, message_id, undefined, "[Неактуальный] " + data.old_text);
-        else if (type === "replys") {
+          if ("reply_methods" in data) {
+            for (const method of data.reply_methods) await this.clear("replys", method, data.deal_id);
+          }
+        } else if (type === "replys") {
           await this.telegraf.telegram.deleteMessage(data.chat_id, message_id);
           await this.reply_adapter.delete(message_id);
         }
@@ -61,11 +64,22 @@ export class LiveMessageService {
     return expired;
   }
 
-  async clear(type: "edited" | "replys", method_name: string): Promise<void> {
+  async clear(type: "edited" | "replys", method_name: string, deal_id?: number | number[]): Promise<void> {
     const ids = await this.live_adapter.get_messages(type, method_name);
-    for (const message_id of ids) {
-      await this.live_adapter.delete(type, method_name, message_id);
-      if (type === "replys") await this.reply_adapter.delete(message_id);
+    for (const id of ids) {
+      const data = await this.live_adapter.get<{ deal_id: number }>(type, method_name, id);
+      if (
+        data &&
+        typeof data.deal_id === "number" &&
+        (typeof deal_id === "undefined" ||
+          (!Array.isArray(deal_id) && deal_id === data.deal_id) ||
+          (Array.isArray(deal_id) && deal_id.includes(data.deal_id)))
+      ) {
+        await this.telegraf.telegram.deleteMessage(data.chat_id, id);
+        await this.live_adapter.delete(type, method_name, id);
+        await this.telegraf.telegram.deleteMessage(data.chat_id, id);
+        if (type === "replys") await this.reply_adapter.delete(id);
+      }
     }
   }
 }

@@ -30,7 +30,9 @@ export function registration_deal<Type extends DefaultContext>(
       `deal_info:${deal_id}`,
       { chat_id: is.chat.id, message_id: is.message_id },
       {
+        deal_id,
         type: "client_info",
+        reply_methods: ["deal_amount_reply"],
         old_text: is.text,
         expired_at: expired,
       }
@@ -47,7 +49,9 @@ export function registration_deal<Type extends DefaultContext>(
         `deal_info:${deal_id}`,
         { chat_id: is.chat.id, message_id: is.message_id },
         {
+          deal_id,
           type: "admin_info",
+          reply_methods: ["deal_amount_reply"],
           old_text: is.text,
           expired_at: expired,
         }
